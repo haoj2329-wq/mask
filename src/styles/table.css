@@ -2,7 +2,7 @@
   position: relative;
   width: 900px;
   margin: 40px auto;
-  background: url("/assets/bg/bg-table.svg") center/cover no-repeat, #45835b;
+  background: url("./assets/bg/bg-table.svg") center/cover no-repeat, #45835b;
   box-shadow: 0 10px 60px #000a, 0 0 0 6px #cfb53b, 0 0 40px 10px #f7d76344 inset;
   border-radius: 32px;
   padding: 44px 30px 120px 30px;

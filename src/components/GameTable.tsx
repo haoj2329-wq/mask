@@ -6,10 +6,10 @@ import { Howl } from 'howler';
 import '../styles/table.css';
 
 // 声音文件
-const S_BGM = '/assets/music/bgm.mp3';
-const S_DEAL = '/assets/music/card.mp3';
-const S_WIN  = '/assets/music/win.mp3';
-const S_LOSE = '/assets/music/lose.mp3';
+const S_BGM = './assets/music/bgm.mp3';
+const S_DEAL = './assets/music/card.mp3';
+const S_WIN  = './assets/music/win.mp3';
+const S_LOSE = './assets/music/lose.mp3';
 
 function sleep(ms:number) { return new Promise(resolve=>setTimeout(resolve,ms)); }
 

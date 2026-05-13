@@ -35,6 +35,6 @@ export function isBust(hand: Hand) { return handValue(hand) > 21; }
 export function isBlackjack(hand: Hand) { return hand.length === 2 && handValue(hand) === 21; }
 
 export const cardImgUrl = (card: Card) =>
-  `/assets/cards/${card.suit}_${card.rank}.svg`;
+  `./assets/cards/${card.suit}_${card.rank}.svg`;
 
-export const backImgUrl = '/assets/cards/back.svg';
+export const backImgUrl = './assets/cards/back.svg';
