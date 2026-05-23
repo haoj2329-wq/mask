@@ -278,7 +278,7 @@
     <div class="app-container">
         <div class="app-header">
             <span class="app-title">🔒 匿名P2P聊天</span>
-            <span class="app-badge badge-idle" id="statusBadge">PeerJS</span>
+            <span class="app-badge badge-idle" id="statusBadge">就绪</span>
         </div>
         <div class="main-content">
 
@@ -291,7 +291,7 @@
                     <h1>匿名 P2P 聊天</h1>
                     <p>输入相同房间名，即可与对方建立加密连接</p>
                 </div>
-                <div class="info-banner">通过 <strong>PeerJS (WebRTC)</strong> 端到端加密直连。基于 Cloudflare 信令，国内网络友好。</div>
+                <div class="info-banner">通过 <strong>PeerJS (WebRTC)</strong> 端到端加密直连。Cloudflare TURN 中继确保穿透。</div>
                 <div class="input-group"><label>你的昵称</label><input class="input-field" id="inputNickname" placeholder="给自己起个名字" maxlength="20" autocomplete="off"></div>
                 <div class="input-group"><label>房间名</label><input class="input-field" id="inputRoom" placeholder="双方输入同一个名称" maxlength="30" autocomplete="off"></div>
                 <button class="btn btn-primary" id="btnEnter" onclick="window._enterRoom()" disabled>进入房间</button>
@@ -317,7 +317,7 @@
                         <button class="btn btn-primary btn-small" id="btnReconnect">刷新重连</button>
                     </div>
                 </div>
-                <div class="waiting-tip">提示：双方需输入完全一致的房间名<br>通常在 3-10 秒内完成连接</div>
+                <div class="waiting-tip">提示：双方需输入完全一致的房间名<br>通常在 3-15 秒内完成连接</div>
             </div>
 
             <!-- Chat -->
@@ -343,13 +343,14 @@
                 </div>
             </div>
         </div>
+        <!-- 版本号固定在页面底部 -->
+        <div class="version-footer" id="versionFooter"></div>
     </div>
-    <div class="version-footer" id="versionFooter"></div>
     <div class="toast" id="toast"></div>
 
     <script>
-    // ===== 匿名P2P聊天 v14 — PeerJS WebRTC + 固定频率探测 =====
-    var APP_VERSION='v14';
+    // ===== 匿名P2P聊天 v15 — PeerJS WebRTC + 增强连接可靠性 =====
+    var APP_VERSION='v15';
     (function(){
         var $=function(s){return document.querySelector(s)};
         var views={welcome:$('#viewWelcome'),waiting:$('#viewWaiting'),chat:$('#viewChat')};
@@ -406,24 +407,21 @@
             var ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);return Promise.resolve()
         }
 
-        // ===== 核心工具：房间名 → 固定PeerID =====
-        // 算法：将房间名转为一个确定性的短ID，用于PeerJS信令
-        // 双方使用相同房间名 → 计算出相同的target ID → 互相连接
+        // ===== 核心工具：房间名 → 确定性PeerID =====
         function roomToPeerId(roomName){
             var hash=0;
             for(var i=0;i<roomName.length;i++){
                 var c=roomName.charCodeAt(i);
                 hash=((hash<<5)-hash+c)&0xffffffff;
             }
-            // 转为正数并取模得到短ID
             var hex=(hash>>>0).toString(36);
             return 'anon-'+roomName.toLowerCase().replace(/[^a-z0-9]/g,'-')+'-'+hex;
         }
 
         // ===== PeerJS 连接管理 =====
         var waitStartTime=0,waitTimer=null,reconnectTimer=null;
-        var connectAttempts=0; // DataChannel 连接尝试次数
-        var isInitiator=false; // 第一个进入的人是发起者
+        var connectAttempts=0;
+        var pendingConnections=[]; // ★ 追踪所有待处理的连接
 
         function updateWaitStatus(){
             if(!waitTimer)return;
@@ -435,29 +433,31 @@
             else if(elapsed<15)tipText='已连接信令，等待对方进入...';
             else if(elapsed<30)tipText='等待中... 请确认房间名一致';
             else tipText='连接耗时较长？建议双方都点击刷新重连';
-            var attText=connectAttempts>0?' | 尝试连接: '+connectAttempts+'次':'';
+            var attText=connectAttempts>0?' | 已探测: '+connectAttempts+'次':'';
             $('#waitSubtitle').textContent='已等待 '+timeStr+' | '+tipText+attText;
         }
 
-        // 加载PeerJS库
         function loadPeerJS(){
             return new Promise(function(resolve,reject){
                 if(typeof Peer!=='undefined'){resolve(Peer);return}
                 var s=document.createElement('script');
                 s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';
-                s.onload=function(){
-                    console.log('[PeerJS] 库加载成功');
-                    resolve(Peer);
-                };
-                s.onerror=function(){reject(new Error('PeerJS库加载失败'))};
+                s.onload=function(){console.log('[PeerJS] 库加载成功');resolve(Peer)};
+                s.onerror=function(){reject(new Error('PeerJS库加载失败，请检查网络'))};
                 document.head.appendChild(s);
             });
         }
 
+        function closePendingConnections(){
+            pendingConnections.forEach(function(c){try{c.close()}catch(e){}});
+            pendingConnections=[];
+        }
+
         function cleanup(){
-            clearTimeout(reconnectTimer);clearInterval(waitTimer);
-            reconnectTimer=null;waitTimer=null;
-            connectAttempts=0;state._reconnectDelay=4000;
+            stopReconnect();
+            clearInterval(waitTimer);waitTimer=null;
+            connectAttempts=0;
+            closePendingConnections();
             try{if(dataConn){dataConn.close()}}catch(e){}
             try{if(peer&&peer.destroy){peer.destroy()}}catch(e){}
             dataConn=null;peer=null;
@@ -471,8 +471,6 @@
 
             cleanup();
             clearChat();state.partnerNickname='';state.connected=false;btnSend.disabled=true;
-            state._reconnectDelay=4000; state._targetId=null; // ★重置重连状态
-            isInitiator=true; // 默认自己是发起者
             waitStartTime=Date.now();
 
             showView(views.waiting);
@@ -497,16 +495,14 @@
             var baseId=roomToPeerId(state.roomName);
             console.log('[P2P] 房间ID:', baseId, 'Room:', state.roomName);
 
-            // 同一个房间生成两个ID，双方各占一个，互相连接
+            // ★ 双方各用不同ID，互为对方的连接目标
             var idA=baseId+'-a';
             var idB=baseId+'-b';
             state._idA=idA; state._idB=idB;
 
-            // 显示标识
             var fp=baseId.replace(/-/g,'').substring(0,8);
             $('#fpDisplay').textContent=fp;
             $('#waitFingerprint').style.display='block';
-
             $('#waitSubtitle').textContent='正在连接信令服务器...';
 
             var rtcConfig={
@@ -518,62 +514,62 @@
                     {urls:'stun:stun4.l.google.com:19302'},
                     {urls:'stun:stun.cloudflare.com:3478'},
                     {urls:'stun:stun.stunprotocol.org:3478'},
-                    // 免费 TURN 中继 — 当 STUN 穿透失败时的后备方案
+                    // ★ TURN中继 — NAT穿透失败时的后备方案
                     {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
                     {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
                     {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}
                 ],
-                iceCandidatePoolSize:2
+                iceCandidatePoolSize:2,
+                iceTransportPolicy:'all'
             };
 
-            // 先尝试注册 idA，失败则用 idB
             tryRegister(idA, idB, rtcConfig, 0);
         }
 
         function tryRegister(myId, otherId, rtcConfig, attempt){
-            if(attempt>12){showToast('连接失败，请检查网络后重试', 4000);clearInterval(waitTimer);showView(views.welcome);return;}
+            if(state.connected)return;
+            if(attempt>20){showToast('连接超时，请刷新重试', 4000);clearInterval(waitTimer);showView(views.welcome);return;}
 
-            console.log('[P2P] 尝试注册 ID:', myId, '(第'+(attempt+1)+'次)');
-            $('#waitSubtitle').textContent=attempt>0?'正在重试连接信令... ('+(attempt+1)+'/13)':'正在连接信令服务器...';
+            console.log('[P2P] 注册尝试 #'+(attempt+1)+' ID:', myId);
+            $('#waitSubtitle').textContent=attempt>0?'正在重试连接... ('+(attempt+1)+'/21)':'正在连接信令服务器...';
 
-            var p=new Peer(myId,{debug:1,config:rtcConfig});
+            var p=new Peer(myId,{debug:0,config:rtcConfig});
             var done=false;
-
             function finish(){done=true;}
 
             p.on('open',function(id){
-                if(done)return;
-                console.log('[P2P] ✓ 注册成功! ID:', id);
+                if(done||state.connected)return;
                 finish();
+                console.log('[P2P] ✓ 注册成功! 我的ID:', id);
 
-                // 替换全局peer引用
                 try{if(peer&&peer!==p&&peer.destroy)peer.destroy()}catch(e){}
-                peer=p; state.myId=id; state._targetId=otherId;
+                peer=p; state.myId=id;
 
-                // 显示当前ID
                 var fp=roomToPeerId(state.roomName).replace(/-/g,'').substring(0,8);
                 $('#fpDisplay').textContent=fp;
                 $('#waitFingerprint').style.display='block';
+                $('#waitSubtitle').textContent='已就绪，正在探测对方...';
+                updateBadge();
 
-                $('#waitSubtitle').textContent='已就绪，正在主动探测对方...';
-
-                // ★ 核心策略：启动固定频率探测（每2.5秒一次）
+                // ★ 启动探测
                 startProbing(otherId);
 
-                // 也监听对方的主动连接
+                // ★ 监听对方的主动连接
                 peer.on('connection',function(incomingConn){
-                    console.log('[P2P] ← 对方主动连接我:', incomingConn.peer);
-                    isInitiator=false;
-                    stopReconnect(); // 对方连过来了，停止主动重试
-                    handleConnection(incomingConn);
+                    if(state.connected)return;
+                    console.log('[P2P] ← 收到对方连接! Peer:', incomingConn.peer);
+                    stopReconnect();
+                    closePendingConnections(); // 清理自己发起的未完成连接
+                    setupConnection(incomingConn);
                 });
             });
 
             p.on('error',function(err){
-                if(done)return;
-                console.error('[P2P] 注册错误:', err.type, err.message||'');
+                if(done||state.connected)return;
+                console.error('[P2P] 错误:', err.type);
 
                 if(err.type==='unavailable-id'){
+                    // ID已被对方占用 → 切换到另一个ID
                     finish();
                     console.log('[P2P] ID被占用:', myId, '→ 切换为:', otherId);
                     try{p.destroy()}catch(e){}
@@ -583,69 +579,111 @@
 
                 if(err.type==='network'||err.type==='server-error'||err.type==='socket-error'||err.type==='socket-closed'){
                     finish();
-                    var retryDelay=(attempt+1)*2000;
-                    console.log('[P2P] 网络瞬断，', retryDelay/1000+'秒后重试... (第'+(attempt+1)+'次)');
+                    var delay=Math.min((attempt+1)*1500, 10000);
+                    console.log('[P2P] 网络问题，', delay/1000+'s后重试');
                     try{p.destroy()}catch(e){}
-                    setTimeout(function(){
-                        if(!state.connected){tryRegister(myId, otherId, rtcConfig, attempt+1)}
-                    },retryDelay);
+                    setTimeout(function(){if(!state.connected)tryRegister(myId, otherId, rtcConfig, attempt+1)},delay);
                     return;
                 }
 
-                console.warn('[P2P] 未处理错误:', err.type);
                 finish();
                 try{p.destroy()}catch(e){}
                 if(!state.connected){
-                    $('#waitSubtitle').textContent='出错了: '+err.type+'，即将重试...';
                     setTimeout(function(){if(!state.connected)tryRegister(myId, otherId, rtcConfig, attempt+1)},3000);
                 }
             });
 
             p.on('disconnected',function(){
-                if(done)return;
-                console.log('[P2P] 信令断开');
-                if(!state.connected){
-                    $('#waitSubtitle').textContent='信令断开，尝试重连...';
-                    try{p.reconnect()}catch(e){}
-                }
+                if(done||state.connected)return;
+                console.log('[P2P] 信令断开，自动重连...');
+                try{p.reconnect()}catch(e){}
             });
         }
 
-        // ===== 主动探测连接（核心修复） =====
-        // 用 setInterval 保证固定频率探测，不会因异常回调而中断
-
+        // ===== 探测连接 =====
         function startProbing(otherId){
             if(state.connected)return;
-            stopReconnect(); // 先清理旧的
+            stopReconnect();
+            closePendingConnections();
 
-            reconnectTimer=setInterval(function(){
-                if(state.connected){stopReconnect();return;}
-                if(!peer||peer.destroyed){stopReconnect();return;}
+            function probe(){
+                if(state.connected)return;
+                if(!peer||peer.destroyed)return;
 
                 connectAttempts++;
-                console.log('[P2P] → 探测 #'+connectAttempts+' :', otherId);
-                $('#waitSubtitle').textContent='正在探测对方... (第'+connectAttempts+'次)';
+                console.log('[P2P] → 探测 #'+connectAttempts+' 目标:', otherId);
                 updateWaitStatus();
 
                 try{
                     var conn=peer.connect(otherId,{reliable:true,serialization:'json'});
-                    handleConnection(conn);
+                    pendingConnections.push(conn);
+
+                    // ★ 只监听 open 和 error，不重复监听 data
+                    var handled=false;
+                    conn.on('open',function(){
+                        if(handled||state.connected)return;
+                        handled=true;
+                        console.log('[P2P] ✅ 我方发起的连接已打开!');
+                        stopReconnect();
+                        closePendingConnectionsExcept(conn);
+                        onConnEstablished(conn);
+                    });
+                    conn.on('error',function(err){
+                        if(handled)return;
+                        console.log('[P2P] 连接错误:', err.message||err.type);
+                    });
                 }catch(e){
-                    console.log('[P2P] 探测失败:', e.message);
+                    console.log('[P2P] 探测异常:', e.message);
                 }
-            },2500); // ★ 每2.5秒探测一次
+
+                // ★ 用 setTimeout 递归，不用 setInterval
+                reconnectTimer=setTimeout(probe, 3000);
+            }
+
+            probe(); // 立即开始第一次探测
+        }
+
+        function closePendingConnectionsExcept(keep){
+            pendingConnections.forEach(function(c){if(c!==keep)try{c.close()}catch(e){}});
+            pendingConnections=keep?[keep]:[];
         }
 
         function stopReconnect(){
-            clearInterval(reconnectTimer);
-            clearTimeout(reconnectTimer); // 兼容旧类型
+            clearTimeout(reconnectTimer);
             reconnectTimer=null;
         }
 
-        // 连接打开后的统一处理
-        function onConnOpen(conn){
+        // ★ 统一处理收到的连接（对方主动连接或自己探测成功）
+        function setupConnection(conn){
+            var handled=false;
+            conn.on('open',function(){
+                if(handled||state.connected)return;
+                handled=true;
+                console.log('[P2P] 连接已打开 (被动方)');
+                onConnEstablished(conn);
+            });
+            conn.on('error',function(err){
+                console.error('[P2P] 连接错误:', err);
+            });
+            conn.on('close',function(){
+                console.log('[P2P] 连接关闭 (被动方)');
+                onConnClose();
+            });
+
+            // 可能已经处于open状态
+            if(conn.open&&!handled&&!state.connected){
+                handled=true;
+                console.log('[P2P] 连接已就绪 (同步)');
+                onConnEstablished(conn);
+            }
+        }
+
+        function onConnEstablished(conn){
+            if(state.connected)return;
+            stopReconnect();
+
             if(dataConn&&dataConn!==conn){
-                console.log('[P2P] 关闭旧连接');
+                console.log('[P2P] 关闭旧数据连接');
                 try{dataConn.close()}catch(e){}
             }
             dataConn=conn;
@@ -653,33 +691,34 @@
             clearInterval(waitTimer);waitTimer=null;
             connectAttempts=0;
 
-            console.log('[P2P] ✅ 连接建立! Remote:', conn.peer);
+            console.log('[P2P] ✅✅ 加密通道已建立!!');
 
             $('#waitTitle').textContent='已发现对方！';
             $('#waitSubtitle').textContent='P2P 加密通道已建立';
 
-            // 发送nonce和昵称
+            // ★ 发送身份信息
             var myNonce=Math.random().toString(36).substr(2,10)+Date.now().toString(36);
             state._myNonce=myNonce;
-            try{conn.send({type:'nonce',value:myNonce})}catch(e){}
-            try{conn.send({type:'nickname',nick:state.nickname})}catch(e){}
+            try{conn.send({type:'nonce',value:myNonce})}catch(e){console.error('[P2P] 发送nonce失败:', e)}
+            try{conn.send({type:'nickname',nick:state.nickname})}catch(e){console.error('[P2P] 发送昵称失败:', e)}
 
-            // 处理数据收发
+            // ★ 注册数据处理器（只注册一次）
             conn.on('data',handleMsg);
             conn.on('close',onConnClose);
-            conn.on('error',function(err){console.error('[P2P] Conn error:', err)});
+            conn.on('error',function(err){console.error('[P2P] 数据通道错误:', err)});
 
+            // 延迟切换到聊天视图
             setTimeout(function(){
                 if(!views.chat.classList.contains('active')){
                     updateBadge();updateChatHead();btnSend.disabled=false;
                     showView(views.chat);
                     showToast('P2P 加密通道已建立 ✓');
                 }
-            },300);
+            },400);
         }
 
         function onConnClose(){
-            console.log('[P2P] 连接关闭');
+            console.log('[P2P] 数据连接关闭');
             if(state.connected){
                 state.connected=false;
                 dataConn=null;
@@ -689,37 +728,18 @@
             }
         }
 
-        function handleConnection(conn){
-            conn.on('open',function(){
-                onConnOpen(conn);
-            });
-            conn.on('data',function(data){
-                console.log('[P2P] 收到数据:', typeof data, data);
-                handleMsg(data);
-            });
-            conn.on('close',onConnClose);
-            conn.on('error',function(err){
-                console.error('[P2P] Conn error:', err);
-            });
-        }
-
         function handleMsg(data){
             if(!data||typeof data!=='object')return;
+            console.log('[P2P] 收到:', data.type, data);
             if(data.type==='nonce'){
-                // 收到对方的随机数 → 计算共享验证码
                 var theirNonce=data.value;
-                console.log('[P2P] 收到对方校验码:', theirNonce);
-
-                // 双方nonce排序后拼接hash → 双方计算结果一致
+                console.log('[P2P] 对方校验码:', theirNonce);
                 var myNonce=state._myNonce||'';
                 var parts=[myNonce, theirNonce].sort();
                 var combined=parts[0]+parts[1];
                 var vCode=simpleHash(combined).substring(0,6).toUpperCase();
-
                 state._vCode=vCode;
                 console.log('[P2P] 共享验证码:', vCode);
-
-                // 更新安全指纹为真正的验证码
                 $('#fpDisplay').textContent=vCode;
                 addSystemMsg('🔐 安全验证码: '+vCode+' (双方应一致，建议语音确认)');
             }else if(data.type==='nickname'){
@@ -734,7 +754,6 @@
             }
         }
 
-        // 简单哈希函数 - 用于生成验证码
         function simpleHash(str){
             var h1=0,h2=0;
             for(var i=0;i<str.length;i++){
@@ -758,39 +777,36 @@
         var nickInput=document.getElementById('inputNickname');
         var roomInput=document.getElementById('inputRoom');
         var btnEnter=document.getElementById('btnEnter');
-        
-        // 核心：检查两个输入框是否都有内容，控制按钮
+
         function checkInputs(){
             var nv=nickInput.value.trim();
             var rv=roomInput.value.trim();
             btnEnter.disabled=!(nv&&rv);
         }
-        
-        // 暴露enterRoom到全局，让HTML onclick可以调用
+
         window._enterRoom = enterRoom;
 
-        // 输入框事件
         nickInput.oninput=checkInputs;
         roomInput.oninput=checkInputs;
         nickInput.onkeydown=function(e){if(e.key==='Enter')roomInput.focus()};
         roomInput.onkeydown=function(e){if(e.key==='Enter'&&!btnEnter.disabled)btnEnter.click()};
         checkInputs();
+
         $('#btnCancelWait').addEventListener('click',function(){cleanup();showView(views.welcome);updateBadge()});
         $('#btnReconnect').addEventListener('click',function(){cleanup();setTimeout(enterRoom,300)});
         $('#waitRoomBox').addEventListener('click',function(){
             copyText(state.roomName).then(function(){showToast('✓ 已复制房间名: '+state.roomName)}).catch(function(){showToast('复制失败，请手动选择')});
         });
 
-        // Chat
         $('#btnLeave').addEventListener('click',function(){if(confirm('确定要离开吗？'))leaveRoom()});
 
         function sendMsg(){
             var text=chatInput.value.trim();if(!text||!state.connected||!dataConn)return;
-            try{dataConn.send({type:'message',text:text});addChatMsg(text,'self',state.nickname);playSound()}catch(e){console.error('发送失败:',e)}
+            try{dataConn.send({type:'message',text:text});addChatMsg(text,'self',state.nickname);playSound()}catch(e){console.error('[P2P] 发送失败:',e)}
             chatInput.value='';chatInput.style.height='auto';
         }
         btnSend.addEventListener('click',sendMsg);
-        chatInput.addEventListener('keydown',function(e){if(e.key==='Enter'&& !e.shiftKey){e.preventDefault();sendMsg()}});
+        chatInput.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg()}});
         chatInput.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'});
 
         var tTimer=null;
@@ -800,10 +816,12 @@
             clearTimeout(tTimer);tTimer=setTimeout(function(){try{if(dataConn)dataConn.send({type:'typing',typing:false})}catch(e){}},2000);
         });
 
-        // Sound toggle
-        $('#btnSoundToggle').addEventListener('click',function(){state.soundEnabled=!state.soundEnabled;this.textContent=state.soundEnabled?'🔔':'🔕';showToast(state.soundEnabled?'提示音已开启':'提示音已关闭')});
+        $('#btnSoundToggle').addEventListener('click',function(){
+            state.soundEnabled=!state.soundEnabled;
+            this.innerHTML=state.soundEnabled?'&#128276;':'&#128277;';
+            showToast(state.soundEnabled?'提示音已开启':'提示音已关闭');
+        });
 
-        // URL auto-detect (#room=NAME&nick=NICKNAME)
         function checkURL(){
             var hash=window.location.hash;
             if(!hash||!hash.startsWith('#room='))return;
@@ -815,14 +833,14 @@
             roomInput.value=params.room;
             if(params.nick&&!state.nickname)state.nickname=params.nick;
             checkInputs();
-            if(!btnEnter.disabled){showToast('检测到房间链接，自动加入中...');setTimeout(enterRoom,800)};
+            if(!btnEnter.disabled){showToast('检测到房间链接，自动加入中...');setTimeout(enterRoom,800)}
         }
         checkURL();window.addEventListener('hashchange',checkURL);
         window.addEventListener('beforeunload',function(e){if(state.connected){e.preventDefault();e.returnValue='聊天进行中'}});
 
-        console.log('匿名P2P聊天 v14 | PeerJS WebRTC + 固定频率探测');
+        console.log('匿名P2P聊天 '+APP_VERSION+' | PeerJS WebRTC');
 
-        // 显示版本号
+        // ★ 版本号显示在页面底部
         $('#versionFooter').textContent='匿名P2P聊天 · '+APP_VERSION;
 
         // 预加载PeerJS库
@@ -831,14 +849,8 @@
             statusBadge.textContent='加载中...';statusBadge.className='app-badge badge-warn';
             var s=document.createElement('script');
             s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';
-            s.onload=function(){
-                console.log('[Preload] PeerJS预加载成功');
-                statusBadge.textContent='就绪';statusBadge.className='app-badge badge-ok';
-            };
-            s.onerror=function(){
-                console.warn('[Preload] PeerJS加载失败，稍后重试');
-                setTimeout(preloadPeerJS,3000);
-            };
+            s.onload=function(){console.log('[Preload] PeerJS预加载成功');statusBadge.textContent='就绪';statusBadge.className='app-badge badge-ok'};
+            s.onerror=function(){console.warn('[Preload] PeerJS加载失败');setTimeout(preloadPeerJS,3000)};
             document.head.appendChild(s);
         })();
     })();
