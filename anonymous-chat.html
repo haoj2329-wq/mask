@@ -185,7 +185,7 @@
 
         var p=new Peer(myId,{debug:0,config:ICE,host:sv.h,port:443,path:sv.p,secure:true,pingInterval:3000});
         var done=false;
-        var timeout=setTimeout(function(){if(done||S.ct)return;done=true;console.log('[v16] sigTO',sv.h);try{p.destroy()}catch(e){}reg(oId,idx+1)},8000);
+        var timeout=setTimeout(function(){if(done||S.ct)return;done=true;console.log('[v16] sigTO',sv.h);try{p.destroy()}catch(e){}reg(myId,oId,idx+1)},8000);
 
         p.on('open',function(id){
             if(done||S.ct)return;done=true;clearTimeout(timeout);
@@ -207,8 +207,8 @@
             if(done||S.ct)return;done=true;clearTimeout(timeout);
             console.warn('[v16] sigErr:',err.type);
             try{p.destroy()}catch(e){}
-            if(err.type==='unavailable-id'){reg(oId,idx);return;}
-            reg(myId,idx+1);
+            if(err.type==='unavailable-id'){reg(oId,myId,idx);return;}
+            reg(myId,oId,idx+1);
         });
     }
 
@@ -253,7 +253,7 @@
         }else if(data.type==='typing'){typing(data.typing)}
     }
 
-    function sHash(str){var h1=0,h2=0;for(var i=0;i<str.length;i++){var c=str.charCodeAt(i);h1=((h1<<5)-h1+c)&0xffffffff;h2=((h2<<7)-h2+c)&0xffffffff}while((h1>>>0).toString(16)+(h2>>>0).toString(16)).length<8)return '0';return ((h1>>>0).toString(16)+(h2>>>0).toString(16)).toLowerCase()}
+    function sHash(str){var h1=0,h2=0;for(var i=0;i<str.length;i++){var c=str.charCodeAt(i);h1=((h1<<5)-h1+c)&0xffffffff;h2=((h2<<7)-h2+c)&0xffffffff}while(((h1>>>0).toString(16)+(h2>>>0).toString(16)).length<8)return '0';return ((h1>>>0).toString(16)+(h2>>>0).toString(16)).toLowerCase()}
     function leave(){cleanup();ms.innerHTML='';show(V.w);uB()}
 
     // Events — simplified: button always clickable, validation inside _enter()
