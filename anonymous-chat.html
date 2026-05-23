@@ -71,7 +71,7 @@
             <div class="banner">End-to-end encryption via <strong>PeerJS (WebRTC)</strong>. Multi-signaling + TURN relay ensures NAT traversal.</div>
             <div class="ig"><label>Your Nickname</label><input class="if" id="ni" placeholder="Your name" maxlength="20" autocomplete="off"></div>
             <div class="ig"><label>Room Name</label><input class="if" id="ri" placeholder="Both enter same room name" maxlength="30" autocomplete="off"></div>
-            <button class="btn bp" id="be" onclick="_enter()" disabled>Enter Room</button>
+            <button class="btn bp" id="be" onclick="_enter()">Enter Room</button>
             <div class="div">or</div>
             <button class="btn bg" id="btShare">📋 Share Link to Join</button>
             <div class="hint">Click shared link to auto-join room</div>
@@ -256,34 +256,34 @@
     function sHash(str){var h1=0,h2=0;for(var i=0;i<str.length;i++){var c=str.charCodeAt(i);h1=((h1<<5)-h1+c)&0xffffffff;h2=((h2<<7)-h2+c)&0xffffffff}while((h1>>>0).toString(16)+(h2>>>0).toString(16)).length<8)return '0';return ((h1>>>0).toString(16)+(h2>>>0).toString(16)).toLowerCase()}
     function leave(){cleanup();ms.innerHTML='';show(V.w);uB()}
 
-    // Events
-    var ni=$('#ni'),ri=$('#ri'),be=$('#be');
-    function ckIn(){
-        if(ni.value.trim()&&ri.value.trim())be.removeAttribute('disabled');
-        else be.setAttribute('disabled','');
-    }
-    ['input','keyup','change','compositionend','blur'].forEach(function(ev){
-        ni.addEventListener(ev,ckIn);ri.addEventListener(ev,ckIn);
-    });
+    // Events — simplified: button always clickable, validation inside _enter()
+    var ni=$('#ni'),ri=$('#ri');
     ni.addEventListener('keydown',function(e){if(e.key==='Enter')ri.focus()});
-    ri.addEventListener('keydown',function(e){if(e.key==='Enter'&&!be.disabled)be.click()});
-    // Extra safety: also bind click on enter button directly
-    be.addEventListener('click',function(){if(!be.disabled)_enter()});
-    ckIn();
+    ri.addEventListener('keydown',function(e){if(e.key==='Enter')$('#be').click()});
 
+    // Share link button — use both clipboard APIs for max compatibility
     $('#btShare').addEventListener('click',function(){
         var nn=ni.value.trim(),rn=ri.value.trim();
         if(!rn){toast('Enter room name first',2500);return;}
-        var url=window.location.href.split('#')[0]+'#room='+encodeURIComponent(rn)+(nn?'&nick='+encodeURIComponent(nn):'');
-        var ok=false;
-        try{
+        var url=location.origin+location.pathname+'#room='+encodeURIComponent(rn)+(nn?'&nick='+encodeURIComponent(nn):'');
+        var done=false;
+        function fallbackCopy(text){
             var ta=document.createElement('textarea');
-            ta.value=url;ta.style.cssText='position:fixed;left:-9999px';
-            document.body.appendChild(ta);ta.focus();ta.select();
-            ok=document.execCommand('copy');
-            document.body.removeChild(ta);
-        }catch(e){}
-        toast(ok?'Link copied! Share it with your peer':'Copy failed, please retry',ok?2500:5000);
+            ta.value=text;ta.style.cssText='position:fixed;left:-9999px;top:-9999px';
+            document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,99999);
+            try{document.execCommand('copy');document.body.removeChild(ta);return true}catch(e){try{document.body.removeChild(ta)}catch(e2){}return false}
+        }
+        if(navigator.clipboard&&navigator.clipboard.writeText){
+            navigator.clipboard.writeText(url).then(function(){
+                toast('Link copied! Share it with your peer ✓',2500);
+            }).catch(function(){
+                done=fallbackCopy(url);
+                toast(done?'Link copied! Share it with your peer ✓':'Copy failed, please retry',done?2500:5000);
+            });
+        }else{
+            done=fallbackCopy(url);
+            toast(done?'Link copied! Share it with your peer ✓':'Copy failed, please retry',done?2500:5000);
+        }
     });
 
     $('#bcBack').addEventListener('click',function(){cleanup();show(V.w);uB()});
@@ -298,7 +298,7 @@
     ci.addEventListener('input',function(){if(!S.ct||!dc)return;send(dc,{type:'typing',typing:true});clearTimeout(tTt);tTt=setTimeout(function(){if(dc)send(dc,{type:'typing',typing:false})},2000)});
     $('#btSound').addEventListener('click',function(){S.snd=!S.snd;this.innerHTML=S.snd?'&#128276;':'&#128277;';toast(S.snd?'Sound ON':'Sound OFF')});
 
-    function chkURL(){var h=window.location.hash;if(!h||!h.startsWith('#room='))return;h=h.substring(1);var params={};h.split('&').forEach(function(p){var kv=p.split('=');if(kv.length===2)params[kv[0]]=decodeURIComponent(kv[1])});if(!params.room)return;ni.value=params.nick||'';ri.value=params.room;if(params.nn&&!S.nn)S.nn=params.nn;ckIn();if(!be.disabled){toast('Link detected, joining...');setTimeout(_enter,800)}}
+    function chkURL(){var h=window.location.hash;if(!h||!h.startsWith('#room='))return;h=h.substring(1);var params={};h.split('&').forEach(function(p){var kv=p.split('=');if(kv.length===2)params[kv[0]]=decodeURIComponent(kv[1])});if(!params.room)return;ni.value=params.nick||'';ri.value=params.room;if(params.nick&&!S.nn)S.nn=params.nick;if(params.room){toast('Link detected, joining...');setTimeout(function(){window._enter()},800)}}
     chkURL();window.addEventListener('hashchange',chkURL);
     window.addEventListener('beforeunload',function(e){if(S.ct){e.preventDefault();e.returnValue='Chatting'}});
 
