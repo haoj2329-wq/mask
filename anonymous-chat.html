@@ -73,6 +73,7 @@
             <div class="ig"><label>Room Name</label><input class="if" id="ri" placeholder="Both enter same room name" maxlength="30" autocomplete="off"></div>
             <button class="btn bp" id="be" onclick="_enter()" disabled>Enter Room</button>
             <div class="div">or</div>
+            <button class="btn bg" id="btShare">📋 Share Link to Join</button>
             <div class="hint">Click shared link to auto-join room</div>
         </div>
 
@@ -258,8 +259,17 @@
     // Events
     var ni=$('#ni'),ri=$('#ri'),be=$('#be');
     function ckIn(){be.disabled=!(ni.value.trim()&&ri.value.trim())}
-    ni.oninput=ckIn;ri.oninput=ckIn;ni.onkeydown=function(e){if(e.key==='Enter')ri.focus()};
-    ri.onkeydown=function(e){if(e.key==='Enter'&&!be.disabled)be.click()};ckIn();
+    ni.addEventListener('input',ckIn);ni.addEventListener('compositionend',ckIn);
+    ri.addEventListener('input',ckIn);ri.addEventListener('compositionend',ckIn);
+    ni.addEventListener('keydown',function(e){if(e.key==='Enter')ri.focus()});
+    ri.addEventListener('keydown',function(e){if(e.key==='Enter'&&!be.disabled)be.click()});ckIn();
+
+    $('#btShare').addEventListener('click',function(){
+        var nn=ni.value.trim(),rn=ri.value.trim();
+        if(!rn){toast('Enter room name first');return;}
+        var url=window.location.href.split('#')[0]+'#room='+encodeURIComponent(rn)+(nn?'&nick='+encodeURIComponent(nn):'');
+        cpTx(url).then(function(){toast('Link copied! Share it with your peer ✓')}).catch(function(){toast('Copy failed')});
+    });
 
     $('#bcBack').addEventListener('click',function(){cleanup();show(V.w);uB()});
     $('#bcRecon').addEventListener('click',function(){cleanup();setTimeout(_enter,300)});
