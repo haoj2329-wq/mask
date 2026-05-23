@@ -405,7 +405,13 @@
         function initPeer(id) {
             if (state.peer) state.peer.destroy();
             state.peer = new Peer(id, {
-                debug: 0
+                debug: 1,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                }
             });
 
             state.peer.on('open', function(pid) {
@@ -421,16 +427,25 @@
             });
 
             state.peer.on('error', function(err) {
-                console.error('Peer error:', err);
+                console.error('Peer error:', err.type, err);
                 if (state.mode === 'join') {
                     $('#joinStatus').style.display = 'block';
-                    $('#joinStatus').textContent = '❌ 连接失败，请检查配对码是否正确';
+                    var errMsg = '❌ 连接失败';
+                    if (err.type === 'peer-unavailable') errMsg = '❌ 对方不在线，请确认配对码是否正确';
+                    else if (err.type === 'network') errMsg = '❌ 网络错误，无法连接信令服务器';
+                    else if (err.type === 'server-error') errMsg = '❌ 信令服务器错误';
+                    else if (err.type === 'socket-error') errMsg = '❌ 网络连接中断';
+                    else if (err.type === 'socket-closed') errMsg = '❌ 连接已关闭';
+                    else if (err.type === 'webrtc') errMsg = '❌ WebRTC连接建立失败（可能被防火墙拦截）';
+                    $('#joinStatus').textContent = errMsg;
                     $('#btnConnectCode').disabled = false;
-                    $('#btnConnectCode').textContent = '🔗 连接';
+                    $('#btnConnectCode').textContent = '🔗 重试';
                     $('#inputCode').disabled = false;
                 }
                 if (err.type === 'unavailable-id') {
                     showToast('该配对码已被占用，请重新生成');
+                } else if (err.type === 'peer-unavailable' && state.mode === 'create') {
+                    // This is normal - creator waits for joiner
                 }
                 updateStatusBadge();
             });
@@ -705,28 +720,43 @@
             this.textContent = '⏳ 连接中...';
             $('#inputCode').disabled = true;
             $('#joinStatus').style.display = 'block';
-            $('#joinStatus').textContent = '🟡 正在连接对方...';
+            $('#joinStatus').textContent = '🟡 正在连接信令服务器...';
             updateStatusBadge();
+
             // Create a random peer ID for the joiner, connect to the code
             var myId = 'j_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
             initPeer(myId);
-            // Wait a moment for peer to open, then connect
+
+            // Wait for peer to be ready (id assigned), then connect to remote peer
+            var attempts = 0;
+            var maxAttempts = 50; // 10 seconds max wait for peer ready
             var checkInterval = setInterval(function() {
-                if (state.peer && !state.peer.destroyed && state.peer.id) {
+                attempts++;
+                if (state.peer && !state.peer.destroyed && state.peer.id && !state.peer.disconnected) {
                     clearInterval(checkInterval);
+                    $('#joinStatus').textContent = '🟡 正在连接对方（' + code.substring(0,4)+' '+code.substring(4,8)+' '+code.substring(8,12) + ')...';
                     connectToPeer(code);
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    if (!state.connected) {
+                        $('#joinStatus').textContent = '❌ 无法连接信令服务器，请检查网络后重试';
+                        $('#btnConnectCode').disabled = false;
+                        $('#btnConnectCode').textContent = '🔗 重试';
+                        $('#inputCode').disabled = false;
+                    }
                 }
             }, 200);
-            // Timeout
+
+            // Overall timeout: 25 seconds
             setTimeout(function() {
                 clearInterval(checkInterval);
-                if (!state.connected) {
-                    $('#joinStatus').textContent = '❌ 连接超时，请确认配对码是否正确';
+                if (!state.connected && state.mode === 'join') {
+                    $('#joinStatus').textContent = '❌ 连接超时，可能原因：<br>1. 对方未在线或已关闭页面<br>2. 配对码输入错误<br>3. 网络防火墙阻止了连接';
                     $('#btnConnectCode').disabled = false;
                     $('#btnConnectCode').textContent = '🔗 重试';
                     $('#inputCode').disabled = false;
                 }
-            }, 30000);
+            }, 25000);
         });
 
         // 点击代码框复制
