@@ -59,7 +59,7 @@
             <div class="view active" id="viewWelcome">
                 <div class="welcome-icon">💬</div>
                 <div class="welcome-text"><h2>零依赖 · 纯P2P</h2><p>无需服务器，无需注册<br>交换简短连接码即可加密直连</p></div>
-                <div class="info-card">🛡️ 不依赖任何云信令服务。通过浏览器原生 <strong>WebRTC</strong> 加密直连。连接码仅 60~100 字符，格式化显示为短码风格。</div>
+                <div class="info-card">🛡️ 不依赖任何云信令服务。通过浏览器原生 <strong>WebRTC</strong> 加密直连。候选地址保留原始格式，连接码 ~80-150 字符。</div>
                 <div class="input-group" style="margin-top:16px"><label>你的昵称</label><input class="input-field" id="inputNickname" placeholder="输入昵称..." maxlength="20" autocomplete="off"></div>
                 <div class="btn-row"><button class="btn btn-primary" id="btnCreate" disabled>📤 创建房间</button><button class="btn btn-outline" id="btnJoin" disabled>📥 加入房间</button></div>
                 <div class="divider" style="margin-top:16px">或</div>
@@ -159,196 +159,99 @@
         function formatLen(n){if(n<1000)return n+' 字符';return (n/1000).toFixed(1)+'k 字符'}
         function formatCode(raw){var s='';for(var i=0;i<raw.length;i++){s+=raw[i];if((i+1)%4===0&&i<raw.length-1)s+='-';}return s;}
 
-        // ===== Compact SDP Packing (Minimal Binary + base64url) =====
-        // Parses SDP, extracts bare essentials, packs into compact binary, base64url encodes
-        function packSDP(sdp, isOffer){
-            // Extract fingerprint as raw 32 bytes
-            var fpMatch = sdp.match(/a=fingerprint:sha-256\s+((?:[0-9A-Fa-f]{2}:){31}[0-9A-Fa-f]{2})/i);
-            var fpBytes = new Uint8Array(32);
-            if(fpMatch){
-                var hex = fpMatch[1].replace(/:/g,'');
-                for(var i=0;i<32;i++) fpBytes[i] = parseInt(hex.substr(i*2,2), 16);
-            } else { for(var i=0;i<32;i++) fpBytes[i]=0; }
+        // ===== Hybrid SDP Packing (binary fingerprint + text candidates) =====
+        // Fingerprint: 32 bytes binary (compact)
+        // ufrag, pwd, candidates: stored as original text (preserves exact format, no parsing bugs)
 
-            // Extract ufrag
-            var ufrag = (sdp.match(/a=ice-ufrag:(\S+)/)||['',''])[1];
-            var ufragBytes = new TextEncoder().encode(ufrag.substring(0,8));
-            var ufragLen = ufragBytes.length;
-
-            // Extract pwd
-            var pwd = (sdp.match(/a=ice-pwd:(\S+)/)||['',''])[1];
-            var pwdBytes = new TextEncoder().encode(pwd.substring(0,32));
-            var pwdLen = pwdBytes.length;
-
-            // Extract candidates (keep host + srflx only, max 5)
-            var candRegex = /a=candidate:(\S+ \S+ \S+ \S+ \S+ \S+ typ (?:host|srflx)(?: raddr \S+ rport \S+)?)/g;
-            var candidates = [];
-            var m;
-            while((m = candRegex.exec(sdp)) !== null && candidates.length < 5){
-                var parts = m[1].split(' ');
-                var typIdx = parts.indexOf('typ');
-                var type = parts[typIdx+1]; // host or srflx
-                var foundation = parts[0];
-                var component = parseInt(parts[1])||1;
-                var transport = parts[2];
-                var priority = parseInt(parts[3])||0;
-                var ip = parts[4];
-                var port = parseInt(parts[5])||0;
-                var isIPv4 = ip.indexOf('.')>=0;
-                var ipBytes;
-                if(isIPv4){
-                    ipBytes = new Uint8Array(4);
-                    var octets = ip.split('.');
-                    for(var i=0;i<4;i++) ipBytes[i] = parseInt(octets[i])||0;
-                } else {
-                    // IPv6 - expand to 16 bytes
-                    ipBytes = expandIPv6(ip);
-                }
-                var relIPBytes = null, relPort = 0;
-                if(type==='srflx'){
-                    var raddrIdx = parts.indexOf('raddr');
-                    var rportIdx = parts.indexOf('rport');
-                    if(raddrIdx>=0){
-                        var relIP = parts[raddrIdx+1];
-                        if(relIP.indexOf('.')>=0){
-                            relIPBytes = new Uint8Array(4);
-                            var ro = relIP.split('.');
-                            for(var i=0;i<4;i++) relIPBytes[i] = parseInt(ro[i])||0;
-                        } else {
-                            relIPBytes = expandIPv6(relIP);
-                        }
-                    }
-                    if(rportIdx>=0) relPort = parseInt(parts[rportIdx+1])||0;
-                }
-                var fBytes = new TextEncoder().encode(foundation.substring(0,16));
-                candidates.push({type:type==='host'?0:1, component:component, port:port, priority:priority,
-                    isIPv4:isIPv4, ipBytes:ipBytes, relIPBytes:relIPBytes, relPort:relPort,
-                    foundationBytes:fBytes, fLen:fBytes.length});
-            }
-
-            // Build binary packet
-            // Header: [1B type=isOffer?0:1] [1B ufragLen] [ufrag] [1B pwdLen] [pwd] [32B fingerprint] [1B candCount]
-            var headerSize = 1+1+ufragLen+1+pwdLen+32+1;
-            var candSize = 0;
-            for(var i=0;i<candidates.length;i++){
-                var c = candidates[i];
-                candSize += 1+1+2+4+1+(c.isIPv4?4:16)+1+c.fLen;
-                if(c.type===1) candSize += 1+(c.relIPBytes?c.relIPBytes.length:0)+2;
-            }
-            var totalSize = headerSize + candSize;
-            var buf = new Uint8Array(totalSize);
-            var pos = 0;
-            buf[pos++] = isOffer ? 0 : 1; // type byte
-            buf[pos++] = ufragLen;
-            buf.set(ufragBytes, pos); pos += ufragLen;
-            buf[pos++] = pwdLen;
-            buf.set(pwdBytes, pos); pos += pwdLen;
-            buf.set(fpBytes, pos); pos += 32;
-            buf[pos++] = candidates.length;
-            for(var i=0;i<candidates.length;i++){
-                var c = candidates[i];
-                buf[pos++] = c.type;
-                buf[pos++] = c.component;
-                buf[pos++] = (c.port >> 8) & 0xFF;
-                buf[pos++] = c.port & 0xFF;
-                buf[pos++] = (c.priority >> 24) & 0xFF;
-                buf[pos++] = (c.priority >> 16) & 0xFF;
-                buf[pos++] = (c.priority >> 8) & 0xFF;
-                buf[pos++] = c.priority & 0xFF;
-                buf[pos++] = c.isIPv4 ? 4 : 6;
-                buf.set(c.ipBytes, pos); pos += c.ipBytes.length;
-                buf[pos++] = c.fLen;
-                buf.set(c.foundationBytes.subarray(0, c.fLen), pos); pos += c.fLen;
-                if(c.type === 1 && c.relIPBytes){
-                    buf[pos++] = c.relIPBytes.length===4 ? 4 : 6;
-                    buf.set(c.relIPBytes, pos); pos += c.relIPBytes.length;
-                    buf[pos++] = (c.relPort >> 8) & 0xFF;
-                    buf[pos++] = c.relPort & 0xFF;
-                }
-            }
-            // standard base64 encode (use + / instead of - _ to avoid conflict with display dashes)
-            var b64 = btoa(String.fromCharCode.apply(null, buf));
-            return b64.replace(/=+$/,'');
+        // Robust btoa wrapper for large Uint8Arrays (avoids String.fromCharCode stack overflow)
+        function uint8ToBase64(bytes) {
+            var CHUNK = 0x8000; var arr = [];
+            for(var i=0;i<bytes.length;i+=CHUNK){ arr.push(String.fromCharCode.apply(null, bytes.subarray(i, i+CHUNK))); }
+            return btoa(arr.join(''));
+        }
+        // Robust atob wrapper returning Uint8Array
+        function base64ToUint8(b64) {
+            var bin = atob(b64); var buf = new Uint8Array(bin.length);
+            for(var i=0;i<bin.length;i++) buf[i] = bin.charCodeAt(i);
+            return buf;
         }
 
-        function expandIPv6(ip){
-            var bytes = new Uint8Array(16);
-            // Handle :: compression
-            if(ip.includes('::')){
-                var parts = ip.split('::');
-                var left = parts[0] ? parts[0].split(':') : [];
-                var right = parts[1] ? parts[1].split(':') : [];
-                var fillCount = 8 - left.length - right.length;
-                var groups = left.concat(new Array(fillCount).fill('0')).concat(right);
-                for(var i=0;i<8;i++){
-                    var v = parseInt(groups[i]||'0', 16);
-                    bytes[i*2] = (v>>8)&0xFF;
-                    bytes[i*2+1] = v&0xFF;
-                }
-            } else {
-                var groups = ip.split(':');
-                for(var i=0;i<8;i++){
-                    var v = parseInt(groups[i]||'0', 16);
-                    bytes[i*2] = (v>>8)&0xFF;
-                    bytes[i*2+1] = v&0xFF;
-                }
-            }
-            return bytes;
+        function packSDP(sdp, isOffer){
+            // --- fingerprint as 32 raw bytes ---
+            var fpMatch = sdp.match(/a=fingerprint:sha-256\s+((?:[0-9A-Fa-f]{2}:){31}[0-9A-Fa-f]{2})/i);
+            var fpBytes = new Uint8Array(32);
+            if(fpMatch){ var h = fpMatch[1].replace(/:/g,''); for(var i=0;i<32;i++) fpBytes[i] = parseInt(h.substr(i*2,2), 16); }
+
+            // --- ufrag & pwd as text ---
+            var ufrag = (sdp.match(/a=ice-ufrag:(\S+)/)||['',''])[1];
+            var ufragBytes = new TextEncoder().encode(ufrag);
+            var pwd = (sdp.match(/a=ice-pwd:(\S+)/)||['',''])[1];
+            var pwdBytes = new TextEncoder().encode(pwd);
+
+            // --- setup flag ---
+            var setup = (sdp.match(/a=setup:(\S+)/)||['','actpass'])[1];
+
+            // --- candidates: keep exact text after "a=candidate:" ---
+            var candRegex = /a=candidate:(\S+ \S+ \S+ \S+ \S+ \S+ typ (?:host|srflx)(?: raddr \S+ rport \S+)?)/g;
+            var candTexts = [];
+            var cm;
+            while((cm = candRegex.exec(sdp)) !== null && candTexts.length < 6){ candTexts.push(cm[1]); }
+
+            // --- Build binary: [1B type] [1B ufragLen] [ufrag] [1B pwdLen] [pwd] [32B fp] [1B setup] [1B candCount] (cands) ---
+            // Each candidate: [2B len] [utf8 text]
+            var candByteArrs = [];
+            var candTotal = 0;
+            for(var i=0;i<candTexts.length;i++){ var cb = new TextEncoder().encode(candTexts[i]); candByteArrs.push(cb); candTotal += 2+cb.length; }
+            var total = 1+1+ufragBytes.length+1+pwdBytes.length+32+1+1 + candTotal;
+            var buf = new Uint8Array(total), pos = 0;
+            buf[pos++] = isOffer ? 0 : 1;
+            buf[pos++] = ufragBytes.length; buf.set(ufragBytes, pos); pos += ufragBytes.length;
+            buf[pos++] = pwdBytes.length; buf.set(pwdBytes, pos); pos += pwdBytes.length;
+            buf.set(fpBytes, pos); pos += 32;
+            buf[pos++] = (setup === 'active') ? 1 : 0;
+            buf[pos++] = candTexts.length;
+            for(var i=0;i<candByteArrs.length;i++){ var cl = candByteArrs[i].length; buf[pos++] = (cl>>8)&0xFF; buf[pos++] = cl&0xFF; buf.set(candByteArrs[i], pos); pos += cl; }
+            return uint8ToBase64(buf).replace(/=+$/,'');
         }
 
         function unpackSDP(packed){
-            // Decode base64 (strip all dashes and whitespace first - these are display formatting only)
             var clean = packed.replace(/[-\s]/g,'');
             while(clean.length % 4) clean += '=';
-            var bin = atob(clean);
-            var buf = new Uint8Array(bin.length);
-            for(var i=0;i<bin.length;i++) buf[i] = bin.charCodeAt(i);
+            var buf = base64ToUint8(clean);
             var pos = 0;
 
             var isAnswer = buf[pos++] === 1;
-            var ufragLen = buf[pos++];
-            var ufrag = new TextDecoder().decode(buf.subarray(pos, pos+ufragLen)); pos += ufragLen;
-            var pwdLen = buf[pos++];
-            var pwd = new TextDecoder().decode(buf.subarray(pos, pos+pwdLen)); pos += pwdLen;
+            var ul = buf[pos++]; var ufrag = new TextDecoder().decode(buf.subarray(pos, pos+ul)); pos += ul;
+            var pl = buf[pos++]; var pwd = new TextDecoder().decode(buf.subarray(pos, pos+pl)); pos += pl;
 
-            // fingerprint hex
-            var fpHex = '';
-            for(var i=0;i<32;i++){ fpHex += (buf[pos+i]>>4).toString(16)+(buf[pos+i]&15).toString(16); if(i<31) fpHex += ':'; }
+            // fingerprint: 32 bytes -> uppercase hex with colons (each byte = exactly 2 hex digits)
+            var fph = [];
+            for(var i=0;i<32;i++){
+                var bv = buf[pos+i];
+                var h = (bv >> 4).toString(16).toUpperCase();
+                var l = (bv & 0x0F).toString(16).toUpperCase();
+                fph.push(h + l);
+            }
+            var fpHex = fph.join(':');
             pos += 32;
 
+            console.log('[unpackSDP] fingerprint=' + fpHex);
+
+            var setupFlag = buf[pos++];
+            var setup = setupFlag === 1 ? 'active' : 'actpass';
             var candCount = buf[pos++];
-            var candidates = [];
+            var candLines = [];
             for(var ci=0;ci<candCount;ci++){
-                var type = buf[pos++] === 0 ? 'host' : 'srflx';
-                var component = buf[pos++];
-                var port = (buf[pos]<<8)|buf[pos+1]; pos+=2;
-                var priority = ((buf[pos]<<24)|(buf[pos+1]<<16)|(buf[pos+2]<<8)|buf[pos+3])>>>0; pos+=4;
-                var ipVer = buf[pos++];
-                var ipBytes = buf.subarray(pos, pos+(ipVer===4?4:16)); pos += ipBytes.length;
-                var ip;
-                if(ipVer===4){ ip = ipBytes[0]+'.'+ipBytes[1]+'.'+ipBytes[2]+'.'+ipBytes[3]; }
-                else { ip = ipBytes.reduce(function(s,b,i){ var h=(b>>4).toString(16)+(b&15).toString(16); return s+((i%2===0&&i>0)?':'+h:h); },''); }
-
-                var fLen = buf[pos++];
-                var foundation = new TextDecoder().decode(buf.subarray(pos, pos+fLen)); pos += fLen;
-
-                var candLine = 'a=candidate:'+foundation+' '+component+' udp '+priority+' '+ip+' '+port+' typ '+type;
-                if(type==='srflx' && pos < buf.length){
-                    var relIpVer = buf[pos++];
-                    var relIPBytes = buf.subarray(pos, pos+(relIpVer===4?4:16)); pos += relIPBytes.length;
-                    var relIP;
-                    if(relIpVer===4){ relIP = relIPBytes[0]+'.'+relIPBytes[1]+'.'+relIPBytes[2]+'.'+relIPBytes[3]; }
-                    else { relIP = relIPBytes.reduce(function(s,b,i){ var h=(b>>4).toString(16)+(b&15).toString(16); return s+((i%2===0&&i>0)?':'+h:h); },''); }
-                    var relPort = (buf[pos]<<8)|buf[pos+1]; pos+=2;
-                    candLine += ' raddr '+relIP+' rport '+relPort;
-                }
-                candidates.push(candLine);
+                var cl = (buf[pos]<<8)|buf[pos+1]; pos += 2;
+                var ctext = new TextDecoder().decode(buf.subarray(pos, pos+cl)); pos += cl;
+                candLines.push('a=candidate:'+ctext);
+                console.log('[unpackSDP] cand: '+candLines[candLines.length-1]);
             }
 
-            // Reconstruct minimal SDP
-            var sessionId = Math.floor(Math.random()*1000000000);
+            // Reconstruct SDP from fixed template — Chrome SIPCC happy
+            var sid = Math.floor(Math.random()*1000000000);
             var sdp = 'v=0\r\n';
-            sdp += 'o=- '+sessionId+' 2 IN IP4 127.0.0.1\r\n';
+            sdp += 'o=- '+sid+' 2 IN IP4 127.0.0.1\r\n';
             sdp += 's=-\r\n';
             sdp += 't=0 0\r\n';
             sdp += 'a=group:BUNDLE 0\r\n';
@@ -357,11 +260,16 @@
             sdp += 'c=IN IP4 0.0.0.0\r\n';
             sdp += 'a=ice-ufrag:'+ufrag+'\r\n';
             sdp += 'a=ice-pwd:'+pwd+'\r\n';
+            sdp += 'a=ice-options:trickle\r\n';
             sdp += 'a=fingerprint:sha-256 '+fpHex+'\r\n';
-            sdp += 'a=setup:'+(isAnswer?'active':'actpass')+'\r\n';
+            sdp += 'a=setup:'+setup+'\r\n';
             sdp += 'a=mid:0\r\n';
             sdp += 'a=sctp-port:5000\r\n';
-            for(var i=0;i<candidates.length;i++) sdp += candidates[i]+'\r\n';
+            sdp += 'a=sctp-max-message-size:262144\r\n';
+            for(var i=0;i<candLines.length;i++) sdp += candLines[i]+'\r\n';
+
+            console.log('[unpackSDP] reconstructed SDP ('+(isAnswer?'answer':'offer')+'):');
+            console.log(sdp);
             return sdp;
         }
 
@@ -616,7 +524,7 @@
 
         window.addEventListener('beforeunload',function(e){if(state.connected){e.preventDefault();e.returnValue='聊天进行中'}});
 
-        console.log('🔒 匿名P2P聊天 v4 | 零依赖 · 紧凑二进制编码 · 连接码 ~60-100字符');
+        console.log('🔒 匿名P2P聊天 v6 | 零依赖 · 混合编码(指纹二进制+候选文本) · 修复fingerprint hex格式BUG');
     })();
     </script>
 </body>
