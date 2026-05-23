@@ -1,7 +1,0 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" width="100" height="140" viewBox="0 0 100 140">
-  <rect width="100" height="140" fill="white" rx="8" stroke="#ccc" stroke-width="1"/>
-  <text x="10" y="22" font-size="16" font-weight="bold" fill="#c41e3a">Q</text>
-  <text x="90" y="130" font-size="16" font-weight="bold" fill="#c41e3a" text-anchor="end" transform="rotate(180 85 125)">Q</text>
-  <text x="50" y="55" text-anchor="middle" font-size="28" fill="#c41e3a">♦</text>
-  <text x="50" y="105" text-anchor="middle" font-size="28" fill="#c41e3a">♦</text>
-</svg>
