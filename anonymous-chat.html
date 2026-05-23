@@ -266,6 +266,12 @@
             .msg-row{ max-width:85%; }
             .chat-input-area{ padding:8px 12px 12px; }
         }
+
+        /* 版本号 */
+        .version-footer{
+            text-align:center; padding:6px 0; font-size:10px; color:var(--text-tertiary);
+            flex-shrink:0; letter-spacing:0.03em; opacity:.5;
+        }
     </style>
 </head>
 <body>
@@ -338,10 +344,12 @@
             </div>
         </div>
     </div>
+    <div class="version-footer" id="versionFooter"></div>
     <div class="toast" id="toast"></div>
 
     <script>
     // ===== 匿名P2P聊天 v14 — PeerJS WebRTC + 固定频率探测 =====
+    var APP_VERSION='v14';
     (function(){
         var $=function(s){return document.querySelector(s)};
         var views={welcome:$('#viewWelcome'),waiting:$('#viewWaiting'),chat:$('#viewChat')};
@@ -813,6 +821,9 @@
         window.addEventListener('beforeunload',function(e){if(state.connected){e.preventDefault();e.returnValue='聊天进行中'}});
 
         console.log('匿名P2P聊天 v14 | PeerJS WebRTC + 固定频率探测');
+
+        // 显示版本号
+        $('#versionFooter').textContent='匿名P2P聊天 · '+APP_VERSION;
 
         // 预加载PeerJS库
         (function preloadPeerJS(){
