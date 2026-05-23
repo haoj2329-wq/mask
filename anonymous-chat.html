@@ -56,25 +56,28 @@
 
         @media(max-width:400px){.vw{padding:22px 18px}.msgs{padding:12px 14px}.mr{max-width:85%}.cia{padding:8px 12px 12px}}
         .ver{text-align:center;padding:6px 0;font-size:10px;color:var(--t3);flex-shrink:0;letter-spacing:.03em;opacity:.5}
+        .lg{display:flex;align-items:center;gap:0;background:var(--surface2);border-radius:20px;padding:3px;border:1px solid var(--bd);margin-left:auto}.lg-btn{border:none;background:none;padding:4px 12px;border-radius:17px;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--t2);transition:all .2s;font-family:inherit;line-height:1.5;white-space:nowrap}.lg-btn.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(26,115,232,.2)}.lg-btn:not(.active):hover{color:var(--text)}
+        .hd .lg{margin-left:10px}
     </style>
 </head>
 <body>
 <div class="app">
     <div class="hd">
-        <span class="hd-title">🔒 Anonymous P2P Chat</span>
+        <span class="hd-title" data-lng="hdr_title">🔒 Anonymous P2P Chat</span>
+        <div class="lg" id="lgToggle"><button class="lg-btn" data-lg="en">EN</button><button class="lg-btn" data-lg="zh">中文</button></div>
         <span class="badge bi" id="sb">Ready</span>
     </div>
     <div class="mc">
         <!-- Welcome -->
         <div class="vw on" id="vW">
-            <div class="brand"><div class="logo"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg></div><h1>Anonymous P2P Chat</h1><p>Enter the same room name to connect with peer via encrypted P2P channel</p></div>
-            <div class="banner">End-to-end encryption via <strong>PeerJS (WebRTC)</strong>. Multi-signaling + TURN relay ensures NAT traversal.</div>
-            <div class="ig"><label>Your Nickname</label><input class="if" id="ni" placeholder="Your name" maxlength="20" autocomplete="off"></div>
-            <div class="ig"><label>Room Name</label><input class="if" id="ri" placeholder="Both enter same room name" maxlength="30" autocomplete="off"></div>
-            <button class="btn bp" id="be" onclick="_enter()">Enter Room</button>
-            <div class="div">or</div>
-            <button class="btn bg" id="btShare">📋 Share Link to Join</button>
-            <div class="hint">Click shared link to auto-join room</div>
+            <div class="brand"><div class="logo"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg></div><h1 data-lng="w_title">Anonymous P2P Chat</h1><p data-lng="w_desc">Enter the same room name to connect with peer via encrypted P2P channel</p></div>
+            <div class="banner" data-lng="w_banner">End-to-end encryption via <strong>PeerJS (WebRTC)</strong>. Multi-signaling + TURN relay ensures NAT traversal.</div>
+            <div class="ig"><label data-lng="w_lbl_nick">Your Nickname</label><input class="if" id="ni" data-lng-placeholder="w_ph_nick" placeholder="Your name" maxlength="20" autocomplete="off"></div>
+            <div class="ig"><label data-lng="w_lbl_room">Room Name</label><input class="if" id="ri" data-lng-placeholder="w_ph_room" placeholder="Both enter same room name" maxlength="30" autocomplete="off"></div>
+            <button class="btn bp" id="be" onclick="_enter()" data-lng="w_btn_enter">Enter Room</button>
+            <div class="div" data-lng="w_divider">or</div>
+            <button class="btn bg" id="btShare" data-lng="w_btn_share">📋 Share Link to Join</button>
+            <div class="hint" data-lng="w_hint">Click shared link to auto-join room</div>
         </div>
 
         <!-- Waiting -->
@@ -85,10 +88,10 @@
                 <div class="ws" id="wtS">Make sure peer entered same room name</div>
             </div>
             <div class="room" id="wrBox" title="Click to copy"></div>
-            <div class="rcp">Click above to copy room name</div>
-            <div class="fp" id="fpBox" style="display:none">ID: <code id="fpD"></code><br><span style="color:var(--t3);font-size:11px">Verification code appears after connection</span></div>
-            <div class="wa"><div class="br"><button class="btn bg bsm" id="bcBack">Back</button><button class="btn bp bsm" id="bcRecon">Refresh & Reconnect</button></div></div>
-            <div class="wtip">Both must enter identical room name<br>Connection usually completes in 3-15 seconds</div>
+            <div class="rcp" data-lng="wt_copy">Click above to copy room name</div>
+            <div class="fp" id="fpBox" style="display:none"><span data-lng="wt_fp">ID: </span><code id="fpD"></code><br><span style="color:var(--t3);font-size:11px" data-lng="wt_fp2">Verification code appears after connection</span></div>
+            <div class="wa"><div class="br"><button class="btn bg bsm" id="bcBack" data-lng="wt_back">Back</button><button class="btn bp bsm" id="bcRecon" data-lng="wt_recon">Refresh &amp; Reconnect</button></div></div>
+            <div class="wtip" data-lng="wt_tip">Both must enter identical room name<br>Connection usually completes in 3-15 seconds</div>
         </div>
 
         <!-- Chat -->
@@ -97,15 +100,15 @@
                 <div class="cav" id="pAv">?</div>
                 <div class="ci"><div class="cn" id="pNm">Peer</div><div class="cs" id="pSt"><span class="sdot"></span>Connected · P2P Encrypted</div></div>
                 <button class="stg" id="btSound">&#128276;</button>
-                <button class="btn bd bsm" id="btLeave" style="font-size:11px;padding:7px 13px">Leave</button>
+                <button class="btn bd bsm" id="btLeave" style="font-size:11px;padding:7px 13px" data-lng="ch_leave">Leave</button>
             </div>
             <div class="msgs" id="msgs">
-                <div class="es"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><p>Encrypted channel ready<br>Send your first message</p></div>
+                <div class="es"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><p data-lng="ch_enc_ready">Encrypted channel ready<br>Send your first message</p></div>
             </div>
-            <div class="cia"><textarea class="cta" id="ctA" rows="1" placeholder="Type a message..." maxlength="2000"></textarea><button class="sb" id="btSend" disabled>&#10148;</button></div>
+            <div class="cia"><textarea class="cta" id="ctA" rows="1" data-lng-placeholder="ch_placeholder" placeholder="Type a message..." maxlength="2000"></textarea><button class="sb" id="btSend" disabled>&#10148;</button></div>
         </div>
     </div>
-    <div class="ver" id="verF"></div>
+    <div class="ver" id="verF" data-lng="f_ver"></div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -113,9 +116,116 @@
 // ===== v16 — Multi-Signaling + Multi-TURN + Fast Handshake =====
 (function(){
     var $=function(s){return document.querySelector(s)};
+    var $$=function(s){return document.querySelectorAll(s)};
     var V={w:$('#vW'),wt:$('#vWt'),ch:$('#vCh')};
     var sb=$('#sb'),ms=$('#msgs'),ci=$('#ctA'),bs=$('#btSend'),ts=$('#toast');
-    var S={nn:'',rn:'',pn:'',snd:true,ct:false};
+    var S={nn:'',rn:'',pn:'',snd:true,ct:false,lang:'en'};
+
+    // ===== I18N =====
+    var L={en:{},zh:{}};
+    L.en={
+        hdr_title:'🔒 Anonymous P2P Chat',
+        st_ready:'Ready',st_waiting:'Waiting',st_connected:'Connected',st_loading:'Loading',
+        w_title:'Anonymous P2P Chat',w_desc:'Enter the same room name to connect with peer via encrypted P2P channel',
+        w_banner:'End-to-end encryption via <strong>PeerJS (WebRTC)</strong>. Multi-signaling + TURN relay ensures NAT traversal.',
+        w_lbl_nick:'Your Nickname',w_ph_nick:'Your name',w_lbl_room:'Room Name',w_ph_room:'Both enter same room name',
+        w_btn_enter:'Enter Room',w_divider:'or',w_btn_share:'📋 Share Link to Join',w_hint:'Click shared link to auto-join room',
+        wt_title:'Room: ',wt_init:'Initializing...',wt_ready:'Ready, probing peer...',
+        wt_copy:'Click above to copy room name',wt_fp:'ID: ',wt_fp2:'Verification code appears after connection',
+        wt_back:'Back',wt_recon:'Refresh & Reconnect',
+        wt_tip:'Both must enter identical room name<br>Connection usually completes in 3-15 seconds',
+        ch_leave:'Leave',ch_enc_ready:'Encrypted channel ready<br>Send your first message',ch_placeholder:'Type a message...',ch_peer:'Peer',
+        f_ver:'AnonP2P Chat · v16',
+        // Dynamic / toast strings
+        t_enter_nick_room:'Enter nickname and room name',t_enter_room:'Enter room name first',
+        t_link_copied:'Link copied! Share it with your peer ✓',t_copy_fail:'Copy failed, please retry',
+        t_copied:'Copied: ',t_all_sig_fail:'All signals unreachable',t_link_detect:'Link detected, joining...',
+        t_p2p_ok:'P2P Encrypted Channel Established ✓',t_load_fail:'Load fail: ',
+        t_sound_on:'Sound ON',t_sound_off:'Sound OFF',
+        t_peer_found:'Peer Found!',t_p2p_channel:'P2P Channel Established',
+        t_verify:'🔐 VerifyCode: ',t_joined:' joined',t_left:'⚠️ Peer left',
+        t_connected:'Connected · P2P Encrypted · ',t_connecting:'Connecting...',
+        t_typing:'Peer is typing...',t_leave_confirm:'Leave?',
+        t_sig_conn:'Connecting signal...',t_sig_ok:'Signal OK, waiting peer...',t_sig_wait:'Waiting...',t_sig_long:'Taking long? Both click Refresh',
+        t_probed:' | Probed:'
+    };
+    L.zh={
+        hdr_title:'🔒 匿名 P2P 聊天',
+        st_ready:'就绪',st_waiting:'等待中',st_connected:'已连接',st_loading:'加载中',
+        w_title:'匿名 P2P 聊天',w_desc:'输入相同的房间名，即可通过加密 P2P 通道与对方建立连接',
+        w_banner:'端到端加密 · 基于 <strong>PeerJS (WebRTC)</strong> · 多重信令 + TURN 中继确保 NAT 穿透',
+        w_lbl_nick:'你的昵称',w_ph_nick:'输入昵称',w_lbl_room:'房间名',w_ph_room:'双方输入相同房间名',
+        w_btn_enter:'进入房间',w_divider:'或',w_btn_share:'📋 分享链接邀请对方',w_hint:'点击分享链接可自动加入房间',
+        wt_title:'房间: ',wt_init:'初始化中...',wt_ready:'准备就绪，正在探测对方...',
+        wt_copy:'点击上方复制房间名',wt_fp:'ID: ',wt_fp2:'连接建立后将显示验证码',
+        wt_back:'返回',wt_recon:'刷新重连',
+        wt_tip:'双方必须输入完全相同的房间名<br>连接通常在 3-15 秒内完成',
+        ch_leave:'离开',ch_enc_ready:'加密通道已就绪<br>发送第一条消息吧',ch_placeholder:'输入消息...',ch_peer:'对方',
+        f_ver:'匿名 P2P 聊天 · v16',
+        t_enter_nick_room:'请输入昵称和房间名',t_enter_room:'请先输入房间名',
+        t_link_copied:'链接已复制！分享给对方即可 ✓',t_copy_fail:'复制失败，请重试',
+        t_copied:'已复制: ',t_all_sig_fail:'所有信令服务器无法连接',t_link_detect:'检测到链接，正在加入...',
+        t_p2p_ok:'P2P 加密通道建立成功 ✓',t_load_fail:'加载失败: ',
+        t_sound_on:'声音 开',t_sound_off:'声音 关',
+        t_peer_found:'找到对方！',t_p2p_channel:'P2P 通道已建立',
+        t_verify:'🔐 验证码: ',t_joined:' 加入了聊天',t_left:'⚠️ 对方已离开',
+        t_connected:'已连接 · P2P 加密 · ',t_connecting:'连接中...',
+        t_typing:'对方正在输入...',t_leave_confirm:'确定离开？',
+        t_sig_conn:'连接信令服务...',t_sig_ok:'信令已连接，等待对方...',t_sig_wait:'等待中...',t_sig_long:'等待较久？双方点击刷新重连',
+        t_probed:' | 已探测:'
+    };
+
+    function t(k){var d=L[S.lang]||L.en;return d[k]!==undefined?d[k]:k}
+    function tF(k){var d=L[S.lang]||L.en,o={};for(var x in d)o[x]=d[x];if(k)for(var y in k)o[y]=k[y];return function(ky){return o[ky]!==undefined?o[ky]:ky}}
+
+    // Apply all static UI text from current language
+    function applyUI(){
+        $$('[data-lng]').forEach(function(el){
+            var k=el.getAttribute('data-lng');
+            var txt=t(k);
+            if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){
+                // skip, handled by placeholder
+            }else if(txt.indexOf('<')>=0)el.innerHTML=txt;else el.textContent=txt;
+        });
+        $$('[data-lng-placeholder]').forEach(function(el){
+            el.placeholder=t(el.getAttribute('data-lng-placeholder'));
+        });
+        // Update lang toggle buttons
+        $$('#lgToggle .lg-btn').forEach(function(b){
+            var lg=b.getAttribute('data-lg');
+            if(lg===S.lang)b.classList.add('active');else b.classList.remove('active');
+        });
+        // Update status badge
+        uB();
+        // Update footer
+        $('#verF').textContent=t('f_ver');
+        // Update share button text
+        $('#btShare').textContent=t('w_btn_share');
+    }
+
+    function setLang(lg){
+        S.lang=lg;
+        try{localStorage.setItem('anonchat_lang',lg)}catch(e){}
+        applyUI();
+        // Re-render current view text
+        if(V.ch.classList.contains('on'))uCH();
+        if(V.wt.classList.contains('on')){
+            if(S.ct){$('#wtT').textContent=t('t_peer_found');$('#wtS').textContent=t('t_p2p_channel')}
+            else if(timer)uWS();
+        }
+        if(V.w.classList.contains('on')){
+            $('#btShare').textContent=t('w_btn_share');
+        }
+    }
+
+    // Bind language toggle
+    $$('#lgToggle .lg-btn').forEach(function(b){
+        b.addEventListener('click',function(){setLang(b.getAttribute('data-lg'))});
+    });
+
+    // Init language
+    try{var sl=localStorage.getItem('anonchat_lang');if(sl&&L[sl])S.lang=sl}catch(e){}
+    applyUI();
     var pr=null,dc=null;
     var t0=0,timer=null,rTimer=null,nTry=0,pending=[],bid='';
 
@@ -138,19 +248,19 @@
     function snd(){if(!S.snd)return;try{var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.setValueAtTime(800,c.currentTime);o.frequency.setValueAtTime(1000,c.currentTime+.08);g.gain.setValueAtTime(.15,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.2);o.start(c.currentTime);o.stop(c.currentTime+.2)}catch(e){}}
     function now(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
     function emoji(){return String.fromCodePoint(0x1F465+Math.floor(Math.random()*30))}
-    function uB(){if(S.ct){sb.textContent='Connected';sb.className='badge bk'}else if(pr&&!S.ct){sb.textContent='Waiting';sb.className='badge bw'}else{sb.textContent='Ready';sb.className='badge bi'}}
-    function uCH(){$('#pNm').textContent=S.pn||'Peer';$('#pAv').textContent=emoji();$('#pSt').innerHTML=S.ct?'<span class="sdot"></span>Connected · P2P Encrypted · '+S.rn:'Connecting...'}
+    function uB(){if(S.ct){sb.textContent=t('st_connected');sb.className='badge bk'}else if(pr&&!S.ct){sb.textContent=t('st_waiting');sb.className='badge bw'}else{sb.textContent=t('st_ready');sb.className='badge bi'}}
+    function uCH(){$('#pNm').textContent=S.pn||t('ch_peer');$('#pAv').textContent=emoji();$('#pSt').innerHTML=S.ct?'<span class="sdot"></span>'+t('t_connected')+S.rn:t('t_connecting')}
 
     function addMsg(txt,tp,nk){var r=document.createElement('div');r.className='mr '+(tp==='s'?'slf':'oth');if(tp!=='s'){var s=document.createElement('span');s.className='mn';s.textContent=nk||'Peer';r.appendChild(s)}var b=document.createElement('div');b.className='mb';b.textContent=txt;r.appendChild(b);var t=document.createElement('span');t.className='mm';t.textContent=now();r.appendChild(t);var e=ms.querySelector('.es');if(e)e.remove();var ti=ms.querySelector('.ti');if(ti)ti.remove();ms.appendChild(r);ms.scrollTop=ms.scrollHeight}
     function sysMsg(t){var d=document.createElement('div');d.className='msys';d.textContent=t;ms.appendChild(d);ms.scrollTop=ms.scrollHeight}
     var ttT=null;
-    function typing(it){var ex=ms.querySelector('.ti');if(it){if(!ex){var d=document.createElement('div');d.className='ti';d.textContent='Peer is typing...';ms.appendChild(d);ms.scrollTop=ms.scrollHeight}clearTimeout(ttT);ttT=setTimeout(function(){var el=ms.querySelector('.ti');if(el)el.remove()},3000)}else if(ex)ex.remove()}
+    function typing(it){var ex=ms.querySelector('.ti');if(it){if(!ex){var d=document.createElement('div');d.className='ti';d.textContent=t('t_typing');ms.appendChild(d);ms.scrollTop=ms.scrollHeight}clearTimeout(ttT);ttT=setTimeout(function(){var el=ms.querySelector('.ti');if(el)el.remove()},3000)}else if(ex)ex.remove()}
 
     function cpTx(t){if(navigator.clipboard)return navigator.clipboard.writeText(t).catch(function(){return fCp(t)});return fCp(t)}
     function fCp(t){var ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);return Promise.resolve()}
     function pid(rn){var h=0;for(var i=0;i<rn.length;i++)h=((h<<5)-h+rn.charCodeAt(i))&0xffffffff;return 'anon-'+rn.toLowerCase().replace(/[^a-z0-9]/g,'-')+'-'+(h>>>0).toString(36)}
 
-    function uWS(){if(!timer)return;var e=Math.floor((Date.now()-t0)/1000),sec=e%60,min=Math.floor(e/60);var tp=e<5?'Connecting signal...':e<15?'Signal OK, waiting peer...':e<30?'Waiting...':'Taking long? Both click Refresh';var ac=nTry>0?' | Probed:'+nTry+'x':'';$('#wtS').textContent=(min?min+'m':'')+sec+'s '+tp+ac}
+    function uWS(){if(!timer)return;var e=Math.floor((Date.now()-t0)/1000),sec=e%60,min=Math.floor(e/60);var tp=e<5?t('t_sig_conn'):e<15?t('t_sig_ok'):e<30?t('t_sig_wait'):t('t_sig_long');var ac=nTry>0?t('t_probed')+nTry+'x':'';$('#wtS').textContent=(min?min+'m':'')+sec+'s '+tp+ac}
     function loadPJ(){return new Promise(function(r,j){if(typeof Peer!=='undefined'){r(Peer);return}var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';s.onload=function(){console.log('[PJ] loaded');r(Peer)};s.onerror=function(){j(Error('PeerJS load failed'))};document.head.appendChild(s)})}
     function clPc(){pending.forEach(function(c){try{c.close()}catch(e){}});pending=[]}
     function stopR(){clearTimeout(rTimer);rTimer=null}
@@ -158,13 +268,13 @@
 
     window._enter=function(){
         S.nn=$('#ni').value.trim();S.rn=$('#ri').value.trim().toLowerCase();
-        if(!S.nn||!S.rn){toast('Enter nickname and room name');return;}
+        if(!S.nn||!S.rn){toast(t('t_enter_nick_room'));return;}
         cleanup();ms.innerHTML='';S.pn='';S.ct=false;bs.disabled=true;t0=Date.now();
         show(V.wt);
-        $('#wtT').textContent='Room: '+S.rn;$('#wtS').textContent='Initializing...';
+        $('#wtT').textContent=t('wt_title')+S.rn;$('#wtS').textContent=t('wt_init');
         $('#wrBox').textContent=S.rn;$('#fpBox').style.display='none';
         uB();timer=setInterval(uWS,1000);
-        loadPJ().then(connect).catch(function(e){clearInterval(timer);show(V.w);toast('Load fail:'+e.message,4000)});
+        loadPJ().then(connect).catch(function(e){clearInterval(timer);show(V.w);toast(t('t_load_fail')+e.message,4000)});
     };
 
     function connect(){
@@ -178,7 +288,7 @@
     function reg(myId,oId,idx){
         if(S.ct)return;
         var mx=SIGS.length*4;
-        if(idx>=mx){toast('All signals unreachable',5000);clearInterval(timer);show(V.w);return;}
+        if(idx>=mx){toast(t('t_all_sig_fail'),5000);clearInterval(timer);show(V.w);return;}
         var sv=SIGS[idx%SIGS.length],att=idx+1;
         console.log('[v16] reg#'+att,' '+myId,'@'+sv.h);
         $('#wtS').textContent='Signal '+sv.h+' ('+att+')';
@@ -193,7 +303,7 @@
             try{if(pr&&pr!==p)try{pr.destroy()}catch(e){}}catch(e){}
             pr=p;S.myId=id;
             $('#fpD').textContent=(bid||'').replace(/-/g,'').substr(0,8).toUpperCase();
-            $('#wtS').textContent='Ready, probing peer...';uB();
+            $('#wtS').textContent=t('wt_ready');uB();
 
             p.on('connection',function(cn){
                 if(S.ct)return;
@@ -231,23 +341,23 @@
         if(dc&&dc!==cn){try{dc.close()}catch(e){}}
         dc=cn;S.ct=true;clearInterval(timer);timer=null;nTry=0;
         console.log('[v16] ✅✅CONNECTED!',cn.peer);
-        $('#wtT').textContent='Peer Found!';$('#wtS').textContent='P2P Channel Established';
+        $('#wtT').textContent=t('t_peer_found');$('#wtS').textContent=t('t_p2p_channel');
         var n=Math.random().toString(36).substr(2,10)+Date.now().toString(36);S._myN=n;
         send(cn,{type:'nonce',value:n});send(cn,{type:'nickname',nick:S.nn});
         cn.on('data',onData);cn.on('close',onClose);cn.on('error',function(e){console.error(e)});
-        setTimeout(function(){if(!V.ch.classList.contains('on')){uB();uCH();bs.disabled=false;show(V.ch);toast('P2P Encrypted Channel Established ✓')}},400);
+        setTimeout(function(){if(!V.ch.classList.contains('on')){uB();uCH();bs.disabled=false;show(V.ch);toast(t('t_p2p_ok'))}},400);
     }
 
-    function onClose(){if(S.ct){S.ct=false;dc=null;uB();bs.disabled=true;if(V.ch.classList.contains('on'))sysMsg('⚠️ Peer left')}}
+    function onClose(){if(S.ct){S.ct=false;dc=null;uB();bs.disabled=true;if(V.ch.classList.contains('on'))sysMsg(t('t_left'))}}
     function send(c,d){try{if(c.open)c.send(d)}catch(e){}}
 
     function onData(data){
         if(!data||typeof data!=='object')return;
         if(data.type==='nonce'){
             var m=S._myN||'',ps=[m,data.value].sort(),vc=sHash(ps[0]+ps[1]).substring(0,6).toUpperCase();
-            S._vc=vc;$('#fpD').textContent=vc;sysMsg('🔐 VerifyCode: '+vc)
+            S._vc=vc;$('#fpD').textContent=vc;sysMsg(t('t_verify')+vc)
         }else if(data.type==='nickname'){
-            S.pn=data.nick||'Peer';uCH();sysMsg((data.nick||'Peer')+' joined')
+            S.pn=data.nick||t('ch_peer');uCH();sysMsg((data.nick||t('ch_peer'))+t('t_joined'))
         }else if(data.type==='message'){
             addMsg(data.text,'o',S.pn||'Peer');snd()
         }else if(data.type==='typing'){typing(data.typing)}
@@ -264,7 +374,7 @@
     // Share link button — use both clipboard APIs for max compatibility
     $('#btShare').addEventListener('click',function(){
         var nn=ni.value.trim(),rn=ri.value.trim();
-        if(!rn){toast('Enter room name first',2500);return;}
+        if(!rn){toast(t('t_enter_room'),2500);return;}
         var url=location.origin+location.pathname+'#room='+encodeURIComponent(rn)+(nn?'&nick='+encodeURIComponent(nn):'');
         var done=false;
         function fallbackCopy(text){
@@ -275,37 +385,37 @@
         }
         if(navigator.clipboard&&navigator.clipboard.writeText){
             navigator.clipboard.writeText(url).then(function(){
-                toast('Link copied! Share it with your peer ✓',2500);
+                toast(t('t_link_copied'),2500);
             }).catch(function(){
                 done=fallbackCopy(url);
-                toast(done?'Link copied! Share it with your peer ✓':'Copy failed, please retry',done?2500:5000);
+                toast(done?t('t_link_copied'):t('t_copy_fail'),done?2500:5000);
             });
         }else{
             done=fallbackCopy(url);
-            toast(done?'Link copied! Share it with your peer ✓':'Copy failed, please retry',done?2500:5000);
+            toast(done?t('t_link_copied'):t('t_copy_fail'),done?2500:5000);
         }
     });
 
     $('#bcBack').addEventListener('click',function(){cleanup();show(V.w);uB()});
     $('#bcRecon').addEventListener('click',function(){cleanup();setTimeout(_enter,300)});
-    $('#wrBox').addEventListener('click',function(){cpTx(S.rn).then(function(){toast('Copied: '+S.rn)}).catch(function(){toast('Copy failed')})});
-    $('#btLeave').addEventListener('click',function(){if(confirm('Leave?'))leave()});
+    $('#wrBox').addEventListener('click',function(){cpTx(S.rn).then(function(){toast(t('t_copied')+S.rn)}).catch(function(){toast(t('t_copy_fail'))})});
+    $('#btLeave').addEventListener('click',function(){if(confirm(t('t_leave_confirm')))leave()});
 
     function doSend(){var t=ci.value.trim();if(!t||!S.ct||!dc)return;send(dc,{type:'message',text:t});addMsg(t,'s',S.nn);snd();ci.value='';ci.style.height='auto'}
     bs.addEventListener('click',doSend);ci.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend()}});
     ci.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'});
     var tTt=null;
     ci.addEventListener('input',function(){if(!S.ct||!dc)return;send(dc,{type:'typing',typing:true});clearTimeout(tTt);tTt=setTimeout(function(){if(dc)send(dc,{type:'typing',typing:false})},2000)});
-    $('#btSound').addEventListener('click',function(){S.snd=!S.snd;this.innerHTML=S.snd?'&#128276;':'&#128277;';toast(S.snd?'Sound ON':'Sound OFF')});
+    $('#btSound').addEventListener('click',function(){S.snd=!S.snd;this.innerHTML=S.snd?'&#128276;':'&#128277;';toast(S.snd?t('t_sound_on'):t('t_sound_off'))});
 
-    function chkURL(){var h=window.location.hash;if(!h||!h.startsWith('#room='))return;h=h.substring(1);var params={};h.split('&').forEach(function(p){var kv=p.split('=');if(kv.length===2)params[kv[0]]=decodeURIComponent(kv[1])});if(!params.room)return;ni.value=params.nick||'';ri.value=params.room;if(params.nick&&!S.nn)S.nn=params.nick;if(params.room){toast('Link detected, joining...');setTimeout(function(){window._enter()},800)}}
+    function chkURL(){var h=window.location.hash;if(!h||!h.startsWith('#room='))return;h=h.substring(1);var params={};h.split('&').forEach(function(p){var kv=p.split('=');if(kv.length===2)params[kv[0]]=decodeURIComponent(kv[1])});if(!params.room)return;ni.value=params.nick||'';ri.value=params.room;if(params.nick&&!S.nn)S.nn=params.nick;if(params.room){toast(t('t_link_detect'));setTimeout(function(){window._enter()},800)}}
     chkURL();window.addEventListener('hashchange',chkURL);
     window.addEventListener('beforeunload',function(e){if(S.ct){e.preventDefault();e.returnValue='Chatting'}});
 
-    console.log('AnonP2P v16 | Multi-sig+TURN');
-    $('#verF').textContent='AnonP2P Chat · v16';
+    console.log('AnonP2P v16 | Multi-sig+TURN | i18n EN/ZH');
+    $('#verF').textContent=t('f_ver');
 
-    (function pre(){if(typeof Peer!=='undefined'){sb.textContent='Ready';sb.className='badge bi';return}sb.textContent='Loading';sb.className='badge bw';var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';s.onload=function(){sb.textContent='Ready';sb.className='badge bi'};s.onerror=function(){setTimeout(pre,3000)};document.head.appendChild(s)})();
+    (function pre(){if(typeof Peer!=='undefined'){sb.textContent=t('st_ready');sb.className='badge bi';return}sb.textContent=t('st_loading');sb.className='badge bw';var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';s.onload=function(){sb.textContent=t('st_ready');sb.className='badge bi'};s.onerror=function(){setTimeout(pre,3000)};document.head.appendChild(s)})();
 })();
 </script>
 </body>
