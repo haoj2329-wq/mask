@@ -33,7 +33,7 @@
         .input-group{margin-bottom:16px}.input-group label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px}
         .input-field{width:100%;padding:12px 16px;background:var(--surface2);border:2px solid transparent;border-radius:var(--radius);color:var(--text);font-size:14px;font-family:inherit;transition:.3s;outline:none}.input-field:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(124,92,252,.12)}.input-field::placeholder{color:#555570}
         .btn{width:100%;padding:13px 20px;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;transition:.3s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px}.btn:active{transform:scale(.97)}.btn-primary{background:linear-gradient(135deg,var(--accent),#6a3ff0);color:#fff;box-shadow:0 4px 20px rgba(124,92,252,.3)}.btn-primary:hover{box-shadow:0 6px 28px rgba(124,92,252,.45);transform:translateY(-1px)}.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}.btn-outline{background:transparent;border:2px solid var(--accent);color:var(--accent)}.btn-outline:hover{background:rgba(124,92,252,.08)}.btn-small{width:auto;padding:7px 14px;font-size:12px;border-radius:10px}.btn-ghost{background:rgba(255,255,255,.04);color:var(--text2);border:1px solid rgba(255,255,255,.08)}.btn-ghost:hover{background:rgba(255,255,255,.08)}.btn-danger{background:rgba(255,92,122,.15);color:var(--danger);border:1px solid rgba(255,92,122,.3)}.btn-row{display:flex;gap:10px}.btn-row .btn{flex:1}
-        .sdp-box{background:var(--bg);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;font-family:'SF Mono','Consolas',monospace;font-size:10px;color:var(--text2);word-break:break-all;max-height:120px;overflow-y:auto;line-height:1.5;margin:12px 0;cursor:default}.sdp-box::-webkit-scrollbar{width:3px}.sdp-box::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+        .code-box{background:var(--bg);border:2px dashed rgba(124,92,252,.2);border-radius:12px;padding:10px 14px;font-family:'SF Mono','Consolas','Courier New',monospace;font-size:13px;color:var(--accent2);word-break:break-all;line-height:1.8;margin:12px 0;cursor:pointer;letter-spacing:.5px;text-align:center;transition:all .3s;user-select:all}.code-box:hover{border-color:var(--accent);background:rgba(124,92,252,.06)}.code-box::-webkit-scrollbar{width:3px}.code-box::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
         .qr-section{text-align:center;margin:12px 0}.qr-container{display:inline-block;background:#fff;padding:12px;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.2)}.qr-container canvas,.qr-container img{display:block;width:160px!important;height:160px!important;border-radius:4px}.qr-label{margin-top:8px;font-size:11px;color:var(--text2)}
         .info-card{background:var(--surface2);border-radius:var(--radius);padding:14px;margin:10px 0;font-size:12px;color:var(--text2);line-height:1.6;border-left:3px solid var(--accent2)}
         .info-card.warning{border-left-color:#ffc107;background:rgba(255,193,7,.05)}
@@ -58,8 +58,8 @@
             <!-- Welcome -->
             <div class="view active" id="viewWelcome">
                 <div class="welcome-icon">💬</div>
-                <div class="welcome-text"><h2>零依赖 · 纯P2P</h2><p>无需服务器，无需注册<br>手动交换一次连接信息即可加密直连</p></div>
-                <div class="info-card">🛡️ 不依赖任何云信令服务。通过浏览器原生 <strong>WebRTC</strong> 加密直连，消息不经过任何第三方服务器。</div>
+                <div class="welcome-text"><h2>零依赖 · 纯P2P</h2><p>无需服务器，无需注册<br>交换简短连接码即可加密直连</p></div>
+                <div class="info-card">🛡️ 不依赖任何云信令服务。通过浏览器原生 <strong>WebRTC</strong> 加密直连。连接码仅 60~100 字符，格式化显示为短码风格。</div>
                 <div class="input-group" style="margin-top:16px"><label>你的昵称</label><input class="input-field" id="inputNickname" placeholder="输入昵称..." maxlength="20" autocomplete="off"></div>
                 <div class="btn-row"><button class="btn btn-primary" id="btnCreate" disabled>📤 创建房间</button><button class="btn btn-outline" id="btnJoin" disabled>📥 加入房间</button></div>
                 <div class="divider" style="margin-top:16px">或</div>
@@ -73,33 +73,33 @@
                 </div>
                 <div id="panelCreate">
                     <div id="createStep1">
-                        <div class="welcome-text"><h3>生成连接信息</h3><p>正在收集网络信息...</p></div>
+                        <div class="welcome-text"><h3>生成连接码</h3><p>正在收集网络信息...</p></div>
                         <div style="text-align:center;padding:20px"><span class="spinner" id="spinnerCreate"></span></div>
                         <div id="offerResult" style="display:none">
-                            <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:600">📋 连接信息（点击复制，发送给对方）：</div>
-                            <div class="sdp-box" id="offerBox" title="点击复制全部"></div>
-                            <div style="text-align:center;margin:4px 0"><span style="font-size:10px;color:var(--text2)">👆 点击上方文本复制，通过任意方式发给对方</span></div>
+                            <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:600">📋 连接码（点击复制，发给对方）：</div>
+                            <div class="code-box" id="offerBox" title="点击复制"></div>
+                            <div style="text-align:center;margin:4px 0"><span style="font-size:10px;color:var(--text2)">👆 点击上方连接码复制，通过任意方式发给对方</span></div>
                             <div class="qr-section"><div class="qr-container" id="qrOffer"></div><div class="qr-label">📱 也可以让对方扫码获取</div></div>
                         </div>
                     </div>
                     <div id="createStep2" style="display:none">
-                        <div class="welcome-text"><h3>等待对方回复</h3><p>对方处理你的连接信息后会生成一段回复<br>粘贴回复即可完成连接</p></div>
-                        <div class="input-group"><label>粘贴对方的回复信息</label><textarea class="input-field" id="inputAnswer" placeholder="在此粘贴对方的回复..." rows="3" style="resize:none;font-size:11px;font-family:'SF Mono','Consolas',monospace"></textarea></div>
+                        <div class="welcome-text"><h3>等待对方回复</h3><p>对方处理你的连接码后会生成回复码<br>粘贴回复码即可完成连接</p></div>
+                        <div class="input-group"><label>粘贴对方的回复码</label><textarea class="input-field" id="inputAnswer" placeholder="在此粘贴对方的回复码..." rows="2" style="resize:none;font-size:11px;font-family:'SF Mono','Consolas',monospace"></textarea></div>
                         <button class="btn btn-primary" id="btnAcceptAnswer">🔗 确认连接</button>
                         <div id="createConnecting" style="display:none;text-align:center;padding:12px;font-size:13px;color:var(--text2)"><span class="spinner"></span> 正在建立P2P连接...</div>
                     </div>
                 </div>
                 <div id="panelJoin" style="display:none">
                     <div id="joinStep1">
-                        <div class="welcome-text"><h3>粘贴连接信息</h3><p>将对方发给你的连接信息粘贴到下方</p></div>
-                        <div class="input-group"><label>对方的连接信息</label><textarea class="input-field" id="inputOffer" placeholder="在此粘贴对方的连接信息..." rows="3" style="resize:none;font-size:11px;font-family:'SF Mono','Consolas',monospace"></textarea></div>
+                        <div class="welcome-text"><h3>粘贴连接码</h3><p>将对方发给你的连接码粘贴到下方</p></div>
+                        <div class="input-group"><label>对方的连接码</label><textarea class="input-field" id="inputOffer" placeholder="在此粘贴对方的连接码..." rows="2" style="resize:none;font-size:11px;font-family:'SF Mono','Consolas',monospace"></textarea></div>
                         <button class="btn btn-primary" id="btnProcessOffer">🔗 处理</button>
                         <div id="joinProcessing" style="display:none;text-align:center;padding:12px;font-size:13px;color:var(--text2)"><span class="spinner"></span> 正在解析...</div>
                     </div>
                     <div id="joinStep2" style="display:none">
-                        <div class="welcome-text"><h3>发送回复给对方</h3><p>你的回复已生成，复制后发回给房间创建者</p></div>
-                        <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:600">📋 你的回复（点击复制，发回给对方）：</div>
-                        <div class="sdp-box" id="answerBox" title="点击复制全部"></div>
+                        <div class="welcome-text"><h3>发送回复码给对方</h3><p>你的回复码已生成，复制后发回给创建者</p></div>
+                        <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:600">📋 你的回复码（点击复制，发回给对方）：</div>
+                        <div class="code-box" id="answerBox" title="点击复制"></div>
                         <div style="text-align:center;margin:4px 0"><span style="font-size:10px;color:var(--text2)">👆 点击复制并发送回对方以完成连接</span></div>
                         <div id="joinWaiting" style="display:none;text-align:center;padding:12px;font-size:13px;color:var(--text2)"><span class="spinner"></span> 等待对方确认...</div>
                     </div>
@@ -157,33 +157,212 @@
         function getTimeStr(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
         function randomEmoji(){var e=['🐱','🐶','🦊','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦄','🌟','⭐','🌈','🔥','💧','🌸','🌺','🍄'];return e[Math.floor(Math.random()*e.length)]}
         function formatLen(n){if(n<1000)return n+' 字符';return (n/1000).toFixed(1)+'k 字符'}
+        function formatCode(raw){var s='';for(var i=0;i<raw.length;i++){s+=raw[i];if((i+1)%4===0&&i<raw.length-1)s+='-';}return s;}
 
-        // ===== SDP Compression =====
-        async function compressSDP(sdp){
-            var encoder=new TextEncoder();var data=encoder.encode(sdp);
-            var compressed;
-            try{
-                var cs=new CompressionStream('deflate-raw');var writer=cs.writable.getWriter();writer.write(data);writer.close();
-                var reader=cs.readable.getReader();var chunks=[];
-                while(true){var r=await reader.read();if(r.done)break;chunks.push(r.value)}
-                var tl=chunks.reduce(function(s,c){return s+c.length},0);compressed=new Uint8Array(tl);var off=0;
-                for(var i=0;i<chunks.length;i++){compressed.set(chunks[i],off);off+=chunks[i].length}
-            }catch(e){compressed=data}
-            var bin='';for(var i=0;i<compressed.length;i++)bin+=String.fromCharCode(compressed[i]);
-            return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+        // ===== Compact SDP Packing (Minimal Binary + base64url) =====
+        // Parses SDP, extracts bare essentials, packs into compact binary, base64url encodes
+        function packSDP(sdp, isOffer){
+            // Extract fingerprint as raw 32 bytes
+            var fpMatch = sdp.match(/a=fingerprint:sha-256\s+((?:[0-9A-Fa-f]{2}:){31}[0-9A-Fa-f]{2})/i);
+            var fpBytes = new Uint8Array(32);
+            if(fpMatch){
+                var hex = fpMatch[1].replace(/:/g,'');
+                for(var i=0;i<32;i++) fpBytes[i] = parseInt(hex.substr(i*2,2), 16);
+            } else { for(var i=0;i<32;i++) fpBytes[i]=0; }
+
+            // Extract ufrag
+            var ufrag = (sdp.match(/a=ice-ufrag:(\S+)/)||['',''])[1];
+            var ufragBytes = new TextEncoder().encode(ufrag.substring(0,8));
+            var ufragLen = ufragBytes.length;
+
+            // Extract pwd
+            var pwd = (sdp.match(/a=ice-pwd:(\S+)/)||['',''])[1];
+            var pwdBytes = new TextEncoder().encode(pwd.substring(0,32));
+            var pwdLen = pwdBytes.length;
+
+            // Extract candidates (keep host + srflx only, max 5)
+            var candRegex = /a=candidate:(\S+ \S+ \S+ \S+ \S+ \S+ typ (?:host|srflx)(?: raddr \S+ rport \S+)?)/g;
+            var candidates = [];
+            var m;
+            while((m = candRegex.exec(sdp)) !== null && candidates.length < 5){
+                var parts = m[1].split(' ');
+                var typIdx = parts.indexOf('typ');
+                var type = parts[typIdx+1]; // host or srflx
+                var foundation = parts[0];
+                var component = parseInt(parts[1])||1;
+                var transport = parts[2];
+                var priority = parseInt(parts[3])||0;
+                var ip = parts[4];
+                var port = parseInt(parts[5])||0;
+                var isIPv4 = ip.indexOf('.')>=0;
+                var ipBytes;
+                if(isIPv4){
+                    ipBytes = new Uint8Array(4);
+                    var octets = ip.split('.');
+                    for(var i=0;i<4;i++) ipBytes[i] = parseInt(octets[i])||0;
+                } else {
+                    // IPv6 - expand to 16 bytes
+                    ipBytes = expandIPv6(ip);
+                }
+                var relIPBytes = null, relPort = 0;
+                if(type==='srflx'){
+                    var raddrIdx = parts.indexOf('raddr');
+                    var rportIdx = parts.indexOf('rport');
+                    if(raddrIdx>=0){
+                        var relIP = parts[raddrIdx+1];
+                        if(relIP.indexOf('.')>=0){
+                            relIPBytes = new Uint8Array(4);
+                            var ro = relIP.split('.');
+                            for(var i=0;i<4;i++) relIPBytes[i] = parseInt(ro[i])||0;
+                        } else {
+                            relIPBytes = expandIPv6(relIP);
+                        }
+                    }
+                    if(rportIdx>=0) relPort = parseInt(parts[rportIdx+1])||0;
+                }
+                var fBytes = new TextEncoder().encode(foundation.substring(0,16));
+                candidates.push({type:type==='host'?0:1, component:component, port:port, priority:priority,
+                    isIPv4:isIPv4, ipBytes:ipBytes, relIPBytes:relIPBytes, relPort:relPort,
+                    foundationBytes:fBytes, fLen:fBytes.length});
+            }
+
+            // Build binary packet
+            // Header: [1B type=isOffer?0:1] [1B ufragLen] [ufrag] [1B pwdLen] [pwd] [32B fingerprint] [1B candCount]
+            var headerSize = 1+1+ufragLen+1+pwdLen+32+1;
+            var candSize = 0;
+            for(var i=0;i<candidates.length;i++){
+                var c = candidates[i];
+                candSize += 1+1+2+4+1+(c.isIPv4?4:16)+1+c.fLen;
+                if(c.type===1) candSize += 1+(c.relIPBytes?c.relIPBytes.length:0)+2;
+            }
+            var totalSize = headerSize + candSize;
+            var buf = new Uint8Array(totalSize);
+            var pos = 0;
+            buf[pos++] = isOffer ? 0 : 1; // type byte
+            buf[pos++] = ufragLen;
+            buf.set(ufragBytes, pos); pos += ufragLen;
+            buf[pos++] = pwdLen;
+            buf.set(pwdBytes, pos); pos += pwdLen;
+            buf.set(fpBytes, pos); pos += 32;
+            buf[pos++] = candidates.length;
+            for(var i=0;i<candidates.length;i++){
+                var c = candidates[i];
+                buf[pos++] = c.type;
+                buf[pos++] = c.component;
+                buf[pos++] = (c.port >> 8) & 0xFF;
+                buf[pos++] = c.port & 0xFF;
+                buf[pos++] = (c.priority >> 24) & 0xFF;
+                buf[pos++] = (c.priority >> 16) & 0xFF;
+                buf[pos++] = (c.priority >> 8) & 0xFF;
+                buf[pos++] = c.priority & 0xFF;
+                buf[pos++] = c.isIPv4 ? 4 : 6;
+                buf.set(c.ipBytes, pos); pos += c.ipBytes.length;
+                buf[pos++] = c.fLen;
+                buf.set(c.foundationBytes.subarray(0, c.fLen), pos); pos += c.fLen;
+                if(c.type === 1 && c.relIPBytes){
+                    buf[pos++] = c.relIPBytes.length===4 ? 4 : 6;
+                    buf.set(c.relIPBytes, pos); pos += c.relIPBytes.length;
+                    buf[pos++] = (c.relPort >> 8) & 0xFF;
+                    buf[pos++] = c.relPort & 0xFF;
+                }
+            }
+            // standard base64 encode (use + / instead of - _ to avoid conflict with display dashes)
+            var b64 = btoa(String.fromCharCode.apply(null, buf));
+            return b64.replace(/=+$/,'');
         }
-        async function decompressSDP(encoded){
-            var b64=encoded.replace(/-/g,'+').replace(/_/g,'/');while(b64.length%4)b64+='=';
-            var bin=atob(b64);var bytes=new Uint8Array(bin.length);
-            for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
-            try{
-                var ds=new DecompressionStream('deflate-raw');var writer=ds.writable.getWriter();writer.write(bytes);writer.close();
-                var reader=ds.readable.getReader();var chunks=[];
-                while(true){var r=await reader.read();if(r.done)break;chunks.push(r.value)}
-                var tl=chunks.reduce(function(s,c){return s+c.length},0);var decompressed=new Uint8Array(tl);var off=0;
-                for(var i=0;i<chunks.length;i++){decompressed.set(chunks[i],off);off+=chunks[i].length}
-                return new TextDecoder().decode(decompressed);
-            }catch(e){return new TextDecoder().decode(bytes)}
+
+        function expandIPv6(ip){
+            var bytes = new Uint8Array(16);
+            // Handle :: compression
+            if(ip.includes('::')){
+                var parts = ip.split('::');
+                var left = parts[0] ? parts[0].split(':') : [];
+                var right = parts[1] ? parts[1].split(':') : [];
+                var fillCount = 8 - left.length - right.length;
+                var groups = left.concat(new Array(fillCount).fill('0')).concat(right);
+                for(var i=0;i<8;i++){
+                    var v = parseInt(groups[i]||'0', 16);
+                    bytes[i*2] = (v>>8)&0xFF;
+                    bytes[i*2+1] = v&0xFF;
+                }
+            } else {
+                var groups = ip.split(':');
+                for(var i=0;i<8;i++){
+                    var v = parseInt(groups[i]||'0', 16);
+                    bytes[i*2] = (v>>8)&0xFF;
+                    bytes[i*2+1] = v&0xFF;
+                }
+            }
+            return bytes;
+        }
+
+        function unpackSDP(packed){
+            // Decode base64 (strip all dashes and whitespace first - these are display formatting only)
+            var clean = packed.replace(/[-\s]/g,'');
+            while(clean.length % 4) clean += '=';
+            var bin = atob(clean);
+            var buf = new Uint8Array(bin.length);
+            for(var i=0;i<bin.length;i++) buf[i] = bin.charCodeAt(i);
+            var pos = 0;
+
+            var isAnswer = buf[pos++] === 1;
+            var ufragLen = buf[pos++];
+            var ufrag = new TextDecoder().decode(buf.subarray(pos, pos+ufragLen)); pos += ufragLen;
+            var pwdLen = buf[pos++];
+            var pwd = new TextDecoder().decode(buf.subarray(pos, pos+pwdLen)); pos += pwdLen;
+
+            // fingerprint hex
+            var fpHex = '';
+            for(var i=0;i<32;i++){ fpHex += (buf[pos+i]>>4).toString(16)+(buf[pos+i]&15).toString(16); if(i<31) fpHex += ':'; }
+            pos += 32;
+
+            var candCount = buf[pos++];
+            var candidates = [];
+            for(var ci=0;ci<candCount;ci++){
+                var type = buf[pos++] === 0 ? 'host' : 'srflx';
+                var component = buf[pos++];
+                var port = (buf[pos]<<8)|buf[pos+1]; pos+=2;
+                var priority = ((buf[pos]<<24)|(buf[pos+1]<<16)|(buf[pos+2]<<8)|buf[pos+3])>>>0; pos+=4;
+                var ipVer = buf[pos++];
+                var ipBytes = buf.subarray(pos, pos+(ipVer===4?4:16)); pos += ipBytes.length;
+                var ip;
+                if(ipVer===4){ ip = ipBytes[0]+'.'+ipBytes[1]+'.'+ipBytes[2]+'.'+ipBytes[3]; }
+                else { ip = ipBytes.reduce(function(s,b,i){ var h=(b>>4).toString(16)+(b&15).toString(16); return s+((i%2===0&&i>0)?':'+h:h); },''); }
+
+                var fLen = buf[pos++];
+                var foundation = new TextDecoder().decode(buf.subarray(pos, pos+fLen)); pos += fLen;
+
+                var candLine = 'a=candidate:'+foundation+' '+component+' udp '+priority+' '+ip+' '+port+' typ '+type;
+                if(type==='srflx' && pos < buf.length){
+                    var relIpVer = buf[pos++];
+                    var relIPBytes = buf.subarray(pos, pos+(relIpVer===4?4:16)); pos += relIPBytes.length;
+                    var relIP;
+                    if(relIpVer===4){ relIP = relIPBytes[0]+'.'+relIPBytes[1]+'.'+relIPBytes[2]+'.'+relIPBytes[3]; }
+                    else { relIP = relIPBytes.reduce(function(s,b,i){ var h=(b>>4).toString(16)+(b&15).toString(16); return s+((i%2===0&&i>0)?':'+h:h); },''); }
+                    var relPort = (buf[pos]<<8)|buf[pos+1]; pos+=2;
+                    candLine += ' raddr '+relIP+' rport '+relPort;
+                }
+                candidates.push(candLine);
+            }
+
+            // Reconstruct minimal SDP
+            var sessionId = Math.floor(Math.random()*1000000000);
+            var sdp = 'v=0\r\n';
+            sdp += 'o=- '+sessionId+' 2 IN IP4 127.0.0.1\r\n';
+            sdp += 's=-\r\n';
+            sdp += 't=0 0\r\n';
+            sdp += 'a=group:BUNDLE 0\r\n';
+            sdp += 'a=msid-semantic: WMS\r\n';
+            sdp += 'm=application 9 UDP/DTLS/SCTP webrtc-datachannel\r\n';
+            sdp += 'c=IN IP4 0.0.0.0\r\n';
+            sdp += 'a=ice-ufrag:'+ufrag+'\r\n';
+            sdp += 'a=ice-pwd:'+pwd+'\r\n';
+            sdp += 'a=fingerprint:sha-256 '+fpHex+'\r\n';
+            sdp += 'a=setup:'+(isAnswer?'active':'actpass')+'\r\n';
+            sdp += 'a=mid:0\r\n';
+            sdp += 'a=sctp-port:5000\r\n';
+            for(var i=0;i<candidates.length;i++) sdp += candidates[i]+'\r\n';
+            return sdp;
         }
 
         // ===== WebRTC =====
@@ -334,15 +513,16 @@
                 $('#spinnerCreate').style.display='inline-block';
                 try{
                     var rawSDP=await createOffer();
-                    var compressed=await compressSDP(rawSDP);
+                    var packed=packSDP(rawSDP, true);
+                    var displayCode = formatCode(packed);
                     $('#spinnerCreate').style.display='none';
                     $('#offerResult').style.display='block';
-                    $('#offerBox').textContent=compressed;
+                    $('#offerBox').textContent=displayCode;
                     // QR code
-                    var shareURL=window.location.origin+window.location.pathname+'#o='+encodeURIComponent(compressed)+'&n='+encodeURIComponent(state.nickname);
+                    var shareURL=window.location.origin+window.location.pathname+'#o='+encodeURIComponent(packed)+'&n='+encodeURIComponent(state.nickname);
                     var qrC=$('#qrOffer');qrC.innerHTML='';
                     try{new QRCode(qrC,{text:shareURL,width:160,height:160,colorDark:'#1a1a2e',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}catch(e){qrC.innerHTML='<div style="padding:10px;color:#888;font-size:11px">二维码生成失败<br>请手动复制文本</div>'}
-                    showToast('✓ 连接信息已生成（'+formatLen(compressed.length)+'）');
+                    showToast('✓ 连接码已生成（'+packed.length+'字符，格式化显示）');
                     setSteps('create',1);
                     // Show step 2 (wait for answer)
                     $('#createStep2').style.display='block';
@@ -352,10 +532,10 @@
 
         // Accept answer (creator side)
         $('#btnAcceptAnswer').addEventListener('click',async function(){
-            var raw=$('#inputAnswer').value.trim();if(!raw)return;
+            var raw=$('#inputAnswer').value.trim().replace(/[-\s]/g,'');if(!raw)return;
             this.disabled=true;this.textContent='⏳ 连接中...';$('#createConnecting').style.display='block';setSteps('create',2);
             try{
-                var sdp=await decompressSDP(raw);
+                var sdp=unpackSDP(raw);
                 await acceptAnswer(sdp);
                 // Connected via event callback
             }catch(e){
@@ -368,25 +548,25 @@
         $('#btnJoin').addEventListener('click',function(){state.mode='join';startSession();$('#panelCreate').style.display='none';$('#panelJoin').style.display='block';setSteps('join',0)});
 
         $('#btnProcessOffer').addEventListener('click',async function(){
-            var raw=$('#inputOffer').value.trim();if(!raw)return;
+            var raw=$('#inputOffer').value.trim().replace(/[-\s]/g,'');if(!raw)return;
             this.disabled=true;this.textContent='⏳ 解析中...';$('#joinProcessing').style.display='block';
             try{
-                var sdp=await decompressSDP(raw);
+                var sdp=unpackSDP(raw);
                 var answerSDP=await processOfferGetAnswer(sdp);
-                var compressed=await compressSDP(answerSDP);
+                var packed=packSDP(answerSDP, false);
                 $('#joinProcessing').style.display='none';$('#joinStep1').style.display='none';$('#joinStep2').style.display='block';
-                $('#answerBox').textContent=compressed;
+                $('#answerBox').textContent=formatCode(packed);
                 $('#joinWaiting').style.display='block';setSteps('join',2);
-                showToast('✓ 回复信息已生成，复制后发给对方（'+formatLen(compressed.length)+'）');
+                showToast('✓ 回复码已生成，复制后发给对方（'+packed.length+'字符）');
                 // Listen for connection
                 pc.onconnectionstatechange=function(){if(pc.connectionState==='connected'){state.connected=true;onConnected()}};
                 pc.oniceconnectionstatechange=function(){if(pc.iceConnectionState==='connected'){state.connected=true;if(!views.chat.classList.contains('active'))onConnected()}};
             }catch(e){$('#joinProcessing').style.display='none';$('#btnProcessOffer').disabled=false;$('#btnProcessOffer').textContent='🔗 重试';showToast('解析失败: '+e.message)}
         });
 
-        // Copy handlers
-        $('#offerBox').addEventListener('click',function(){copyText(this.textContent).then(function(){showToast('✓ 已复制连接信息')}).catch(function(){showToast('复制失败，请手动选择')})});
-        $('#answerBox').addEventListener('click',function(){copyText(this.textContent).then(function(){showToast('✓ 已复制回复信息')}).catch(function(){showToast('复制失败，请手动选择')})});
+        // Copy handlers - strip dashes on copy
+        $('#offerBox').addEventListener('click',function(){var raw=this.textContent.replace(/[-\s]/g,'');copyText(raw).then(function(){showToast('✓ 已复制连接码（'+raw.length+'字符）')}).catch(function(){showToast('复制失败，请手动选择')})});
+        $('#answerBox').addEventListener('click',function(){var raw=this.textContent.replace(/[-\s]/g,'');copyText(raw).then(function(){showToast('✓ 已复制回复码（'+raw.length+'字符）')}).catch(function(){showToast('复制失败，请手动选择')})});
 
         // Back
         $('#btnBack').addEventListener('click',function(){resetAll();showView(views.welcome)});
@@ -428,7 +608,7 @@
             $('#inputOffer').value=offerStr;
             if(partnerNick)try{state.partnerNickname=decodeURIComponent(partnerNick)}catch(e){}
             updateBadge();setSteps('join',0);
-            showToast('📥 检测到连接信息，点击"处理"加入');
+            showToast('📥 检测到连接码，自动加入中...');
             // Auto-process after a short delay
             setTimeout(function(){$('#btnProcessOffer').click()},800);
         }
@@ -436,7 +616,7 @@
 
         window.addEventListener('beforeunload',function(e){if(state.connected){e.preventDefault();e.returnValue='聊天进行中'}});
 
-        console.log('🔒 匿名P2P聊天 v3 | 零依赖 · 手动WebRTC信令 · SDP压缩');
+        console.log('🔒 匿名P2P聊天 v4 | 零依赖 · 紧凑二进制编码 · 连接码 ~60-100字符');
     })();
     </script>
 </body>
