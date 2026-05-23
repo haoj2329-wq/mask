@@ -304,7 +304,7 @@
                 </div>
                 <div class="room-display" id="waitRoomBox" title="点击复制房间名"></div>
                 <div class="room-copy-hint">点击上方名称可复制给对方</div>
-                <div class="fp-box" id="waitFingerprint" style="display:none">安全指纹：<code id="fpDisplay"></code><br><span style="color:var(--text-tertiary);font-size:11px">建议语音确认前 4 位</span></div>
+                <div class="fp-box" id="waitFingerprint" style="display:none">当前ID：<code id="fpDisplay"></code><br><span style="color:var(--text-tertiary);font-size:11px">连接成功后双方将显示相同验证码</span></div>
                 <div class="waiting-actions">
                     <div class="btn-row">
                         <button class="btn btn-ghost btn-small" id="btnCancelWait">返回</button>
@@ -671,8 +671,7 @@
         function handleConnection(conn){
             conn.on('open',function(){
                 if(dataConn&&dataConn!==conn){
-                    // 已有连接，关闭旧的
-                    console.log('[PeerJS] 关闭旧连接，使用新连接');
+                    console.log('[P2P] 关闭旧连接，使用新连接');
                     try{dataConn.close()}catch(e){}
                 }
                 dataConn=conn;
@@ -680,12 +679,16 @@
                 clearTimeout(reconnectTimer);
                 clearInterval(waitTimer);waitTimer=null;
 
-                var remoteId=conn.peer;
-                console.log('[PeerJS] ✅ 连接建立成功! Remote:', remoteId);
-                console.log('[PeerJS] 我是'+(isInitiator?'发起者':'被连接方'));
+                console.log('[P2P] ✅ 连接建立! Remote:', conn.peer);
 
                 $('#waitTitle').textContent='已发现对方！';
                 $('#waitSubtitle').textContent='P2P 加密通道已建立';
+
+                // 生成我的安全随机数并发送（用于双方校验）
+                var myNonce=Math.random().toString(36).substr(2,10)+Date.now().toString(36);
+                state._myNonce=myNonce;
+                console.log('[P2P] 发送我的校验码:', myNonce);
+                try{conn.send({type:'nonce',value:myNonce})}catch(e){console.error('发送nonce失败:',e)}
 
                 // 发送昵称
                 try{conn.send({type:'nickname',nick:state.nickname})}catch(e){}
@@ -694,18 +697,18 @@
                     if(!views.chat.classList.contains('active')){
                         updateBadge();updateChatHead();btnSend.disabled=false;
                         showView(views.chat);
-                        showToast('P2P 加密通道已建立');
+                        showToast('P2P 加密通道已建立 ✓');
                     }
                 },300);
             });
 
             conn.on('data',function(data){
-                console.log('[PeerJS] 收到数据:', typeof data, data);
+                console.log('[P2P] 收到数据:', typeof data, data);
                 handleMsg(data);
             });
 
             conn.on('close',function(){
-                console.log('[PeerJS] 连接关闭');
+                console.log('[P2P] 连接关闭');
                 if(state.connected){
                     state.connected=false;
                     dataConn=null;
@@ -716,13 +719,30 @@
             });
 
             conn.on('error',function(err){
-                console.error('[PeerJS] Conn error:', err);
+                console.error('[P2P] Conn error:', err);
             });
         }
 
         function handleMsg(data){
             if(!data||typeof data!=='object')return;
-            if(data.type==='nickname'){
+            if(data.type==='nonce'){
+                // 收到对方的随机数 → 计算共享验证码
+                var theirNonce=data.value;
+                console.log('[P2P] 收到对方校验码:', theirNonce);
+
+                // 双方nonce排序后拼接hash → 双方计算结果一致
+                var myNonce=state._myNonce||'';
+                var parts=[myNonce, theirNonce].sort();
+                var combined=parts[0]+parts[1];
+                var vCode=simpleHash(combined).substring(0,6).toUpperCase();
+
+                state._vCode=vCode;
+                console.log('[P2P] 共享验证码:', vCode);
+
+                // 更新安全指纹为真正的验证码
+                $('#fpDisplay').textContent=vCode;
+                addSystemMsg('🔐 安全验证码: '+vCode+' (双方应一致，建议语音确认)');
+            }else if(data.type==='nickname'){
                 state.partnerNickname=data.nick||'对方';
                 updateChatHead();
                 addSystemMsg((data.nick||'对方')+' 加入了聊天');
@@ -732,6 +752,19 @@
             }else if(data.type==='typing'){
                 showTyping(data.typing);
             }
+        }
+
+        // 简单哈希函数 - 用于生成验证码
+        function simpleHash(str){
+            var h1=0,h2=0;
+            for(var i=0;i<str.length;i++){
+                var c=str.charCodeAt(i);
+                h1=((h1<<5)-h1+c)&0xffffffff;
+                h2=((h2<<7)-h2+c)&0xffffffff;
+            }
+            var hex=((h1>>>0).toString(16)+(h2>>>0).toString(16)).toLowerCase();
+            while(hex.length<8)hex='0'+hex;
+            return hex;
         }
 
         function leaveRoom(){
