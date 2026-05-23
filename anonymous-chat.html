@@ -3,857 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>匿名P2P聊天 | Anonymous Chat v14</title>
+    <title>Anonymous P2P Chat v16</title>
     <style>
-        :root {
-            --bg: #f0f2f5;
-            --surface: #ffffff;
-            --surface2: #f7f8fa;
-            --accent: #1a73e8;
-            --accent-hover: #1557b0;
-            --accent-light: rgba(26,115,232,0.08);
-            --text: #1c1e21;
-            --text-secondary: #65676b;
-            --text-tertiary: #8a8d91;
-            --border: #e4e6eb;
-            --bubble-self: #1a73e8;
-            --bubble-other: #e4e6eb;
-            --danger: #e41e3f;
-            --success: #00a86b;
-            --warning: #f7b955;
-            --radius-sm: 10px;
-            --radius-md: 16px;
-            --radius-lg: 22px;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-            --shadow-lg: 0 8px 28px rgba(0,0,0,0.12);
-        }
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #0d1117; --surface: #161b22; --surface2: #21262d;
-                --accent: #58a6ff; --accent-hover: #79c0ff; --accent-light: rgba(88,166,255,0.1);
-                --text: #e6edf3; --text-secondary: #8b949e; --text-tertiary: #6e7681;
-                --border: #30363d; --bubble-other: #21262d;
-                --shadow-sm: 0 1px 3px rgba(0,0,0,0.3); --shadow-md: 0 4px 12px rgba(0,0,0,0.35); --shadow-lg: 0 8px 28px rgba(0,0,0,0.45);
-            }
-        }
+        :root{--bg:#f0f2f5;--surface:#fff;--surface2:#f7f8fa;--accent:#1a73e8;--accent-h:#1557b0;--accent-l:rgba(26,115,232,.08);--text:#1c1e21;--t2:#65676b;--t3:#8a8d91;--bd:#e4e6eb;--bs:#1a73e8;--bo:#e4e6eb;--danger:#e41e3f;--ok:#00a86b;--warn:#f7b955}
+        @media(prefers-color-scheme:dark){:root{--bg:#0d1117;--surface:#161b22;--surface2:#21262d;--accent:#58a6ff;--accent-h:#79c0ff;--accent-l:rgba(88,166,255,.1);--text:#e6edf3;--t2:#8b949e;--t3:#6e7681;--bd:#30363d;--bo:#21262d}}
         *{margin:0;padding:0;box-sizing:border-box}
-        body{
-            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;
-            background:var(--bg); color:var(--text); min-height:100vh; display:flex; align-items:center; justify-content:center;
-            -webkit-tap-highlight-color:transparent; user-select:none;
-        }
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;user-select:none}
+        .app{width:100%;max-width:480px;height:100vh;max-height:840px;display:flex;flex-direction:column;background:var(--surface);box-shadow:0 8px 28px rgba(0,0,0,.12);overflow:hidden;position:relative}
+        @media(min-width:560px){.app{border-radius:24px;height:calc(100vh-48px)}body{padding:24px}}
+        .hd{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--bd);background:var(--surface)}
+        .hd-title{font-size:16px;font-weight:700}.badge{font-size:11px;padding:4px 11px;border-radius:20px;font-weight:600}
+        .bi{background:var(--accent-l);color:var(--accent)}.bk{background:rgba(0,168,107,.1);color:var(--ok)}.bw{background:rgba(247,185,85,.12);color:#c27f03;animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        .mc{flex:1;overflow-y:auto;display:flex;flex-direction:column}.mc::-webkit-scrollbar{width:0}
+        .vw{display:none;flex:1;flex-direction:column;padding:28px 24px}.vw.on{display:flex;animation:vin .3s ease-out}@keyframes vin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-        /* ===== App Container (Phone-like) ===== */
-        .app-container{
-            width:100%; max-width:480px; height:100vh; max-height:840px; display:flex; flex-direction:column;
-            background:var(--surface); border-radius:0; box-shadow:var(--shadow-lg); overflow:hidden; position:relative;
-        }
-        @media(min-width:560px){ .app-container{ border-radius:24px; height:calc(100vh - 48px); } body{padding:24px} }
+        .brand{text-align:center;margin-bottom:32px}.logo{width:64px;height:64px;margin:0 auto 16px;border-radius:18px;background:linear-gradient(135deg,#1a73e8,#0d47a1);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(26,115,232,.25)}
+        .logo svg{width:32px;height:32px;fill:#fff}.brand h1{font-size:22px;font-weight:800;color:var(--text);line-height:1.2}.brand p{font-size:13px;color:var(--t2);margin-top:6px;line-height:1.5}
+        .banner{background:var(--accent-l);border-radius:10px;padding:13px 16px;font-size:12.5px;color:var(--accent);line-height:1.55;margin-bottom:24px;border-left:3px solid var(--accent)}
+        .ig{margin-bottom:14px}.ig label{display:block;font-size:12px;font-weight:600;color:var(--t2);margin-bottom:6px;letter-spacing:.02em;text-transform:uppercase}
+        .if{width:100%;padding:13px 16px;background:var(--surface2);border:1.5px solid var(--bd);border-radius:10px;color:var(--text);font-size:15px;font-family:inherit;transition:border-color .2s;outline:none}.if:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-l)}
+        .btn{width:100%;padding:14px 20px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px}.btn:active{transform:scale(.97)}
+        .bp{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(26,115,232,.25)}.bp:hover{background:var(--accent-h)}.bp:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+        .bsm{width:auto;padding:8px 16px;font-size:13px;border-radius:10px;font-weight:600}.bg{background:transparent;color:var(--t2);border:1.5px solid var(--bd)}.bg:hover{background:var(--surface2)}.bd{background:rgba(228,30,63,.07);color:var(--danger);border:1.5px solid rgba(228,30,63,.2)}
+        .br{display:flex;gap:10px}.br .btn{flex:1}
+        .div{text-align:center;color:var(--t3);font-size:12px;margin:20px 0;position:relative}.div::before,.div::after{content:'';position:absolute;top:50%;width:28%;height:1px;background:var(--bd)}.div::before{left:0}.div::after{right:0}
+        .hint{font-size:12px;color:var(--t3);text-align:center;margin-top:4px}
 
-        /* ===== Header ===== */
-        .app-header{
-            padding:14px 20px; display:flex; align-items:center; justify-content:space-between;
-            flex-shrink:0; background:var(--surface); border-bottom:1px solid var(--border);
-            z-index:10;
-        }
-        .app-title{ font-size:16px; font-weight:700; color:var(--text); letter-spacing:-0.02em; }
-        .app-badge{
-            font-size:11px; padding:4px 11px; border-radius:20px; font-weight:600; letter-spacing:0.01em;
-        }
-        .badge-idle{ background:var(--accent-light); color:var(--accent); }
-        .badge-ok{ background:rgba(0,168,107,0.1); color:var(--success); }
-        .badge-warn{ background:rgba(247,185,85,0.12); color:#c27f03; animation:pulse 2s infinite; }
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        .wst{text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}.spn{width:44px;height:44px;border:3.5px solid var(--bd);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 18px}@keyframes sp{to{transform:rotate(360deg)}}
+        .wt{font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px}.ws{font-size:13px;color:var(--t2);line-height:1.5;min-height:40px}
+        .room{background:var(--surface2);border:1.5px dashed var(--bd);border-radius:10px;padding:14px 18px;font-family:'SF Mono',Consolas,monospace;font-size:15px;font-weight:600;color:var(--accent);word-break:break-all;letter-spacing:.5px;cursor:pointer;user-select:all;margin:20px 0 6px;text-align:center;max-width:300px;margin-left:auto;margin-right:auto}
+        .room:hover{border-color:var(--accent);background:var(--accent-l)}.rcp{font-size:11px;color:var(--t3);margin-bottom:24px}
+        .fp{background:rgba(0,168,107,.06);border:1px solid rgba(0,168,107,.15);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--t2);margin:12px auto 24px;max-width:320px;text-align:left}.fp code{font-family:'SF Mono',Consolas,monospace;color:var(--ok);font-weight:700;font-size:13px}
+        .wa{margin-top:auto;padding-top:16px}.wtip{font-size:11px;color:var(--t3);text-align:center;margin-top:14px;line-height:1.6}
 
-        /* ===== Main Content Area ===== */
-        .main-content{ flex:1; overflow-y:auto; display:flex; flex-direction:column; position:relative; }
-        .main-content::-webkit-scrollbar{width:0}
+        .chdr{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--bd);flex-shrink:0;background:var(--surface)}
+        .cav{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#0d47a1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}.ci{flex:1;min-width:0}.cn{font-weight:700;font-size:14px}.cs{font-size:11px;color:var(--t2);display:flex;align-items:center;gap:5px}
+        .sdot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;flex-shrink:0}
+        .stg{background:none;border:none;color:var(--t2);font-size:18px;cursor:pointer;padding:6px;border-radius:50%}.stg:hover{background:var(--surface2)}
 
-        /* ===== Views ===== */
-        .view{ display:none; flex:1; flex-direction:column; padding:28px 24px; }
-        .view.active{ display:flex; animation:viewIn .3s ease-out; }
-        @keyframes viewIn{ from{opacity:0; transform:translateY(12px)} to{opacity:1; transform:translateY(0)} }
+        .msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:6px;background:var(--bg)}.msgs::-webkit-scrollbar{width:4px}.msgs::-webkit-scrollbar-thumb{background:var(--bd);border-radius:4px}
+        .mr{display:flex;flex-direction:column;max-width:78%;animation:min .2s ease-out}.mr.slf{align-self:flex-end;align-items:flex-end}.mr.oth{align-self:flex-start;align-items:flex-start}@keyframes min{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+        .mb{padding:10px 15px;border-radius:18px;font-size:14px;line-height:1.46;word-break:break-word;white-space:pre-wrap}.mr.slf .mb{background:var(--bs);color:#fff;border-bottom-right-radius:6px}.mr.oth .mb{background:var(--bo);color:var(--text);border-bottom-left-radius:6px}
+        .mm{font-size:10px;color:var(--t3);margin-top:3px;padding:0 4px}.mn{font-weight:600}
+        .msys{align-self:center;font-size:11px;color:var(--t3);padding:4px 14px;background:rgba(128,128,128,.08);border-radius:16px;margin:4px 0}
+        .ti{font-size:12px;color:var(--t2);padding:6px 14px;align-self:flex-start;background:var(--bo);border-radius:18px;border-bottom-left-radius:6px;animation:tpP 1.4s infinite}@keyframes tpP{0%,100%{opacity:.6}50%{opacity:1}}
+        .es{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--t2);text-align:center;padding:36px 20px}.es svg{width:56px;height:56px;margin-bottom:16px;opacity:.35}.es p{font-size:13px;line-height:1.55}
+        .cia{padding:10px 16px 16px;border-top:1px solid var(--bd);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;background:var(--surface)}
+        .cta{flex:1;resize:none;background:var(--surface2);border:1.5px solid var(--bd);border-radius:20px;padding:10px 18px;color:var(--text);font-size:14px;font-family:inherit;outline:none;max-height:100px;min-height:42px;line-height:1.4;transition:border-color .2s}.cta:focus{border-color:var(--accent)}
+        .sb{width:42px;height:42px;min-width:42px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}.sb:hover{transform:scale(1.05);box-shadow:0 4px 14px rgba(26,115,232,.3)}.sb:active{transform:scale(.92)}.sb:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
 
-        /* ===== Welcome View ===== */
-        .welcome-brand{ text-align:center; margin-bottom:32px; }
-        .welcome-logo{
-            width:64px; height:64px; margin:0 auto 16px; border-radius:18px;
-            background:linear-gradient(135deg,#1a73e8 0%,#0d47a1 100%);
-            display:flex; align-items:center; justify-content:center;
-            box-shadow:0 8px 24px rgba(26,115,232,0.25);
-        }
-        .welcome-logo svg{ width:32px; height:32px; fill:#fff; }
-        .welcome-brand h1{ font-size:22px; font-weight:800; letter-spacing:-0.03em; color:var(--text); line-height:1.2; }
-        .welcome-brand p{ font-size:13px; color:var(--text-secondary); margin-top:6px; line-height:1.5; }
+        .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-120px);background:var(--surface);color:var(--text);padding:10px 22px;border-radius:24px;font-size:13px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.12);z-index:200;pointer-events:none;transition:transform .3s cubic-bezier(.175,.885,.32,1.275);border:1px solid var(--bd)}.toast.show{transform:translateX(-50%) translateY(0)}
 
-        .info-banner{
-            background:var(--accent-light); border-radius:var(--radius-sm); padding:13px 16px;
-            font-size:12.5px; color:var(--accent); line-height:1.55; margin-bottom:24px;
-            border-left:3px solid var(--accent);
-        }
-        .info-banner strong{ font-weight:700; }
-
-        .input-group{ margin-bottom:14px; }
-        .input-group label{
-            display:block; font-size:12px; font-weight:600; color:var(--text-secondary);
-            margin-bottom:6px; letter-spacing:0.02em; text-transform:uppercase;
-        }
-        .input-field{
-            width:100%; padding:13px 16px; background:var(--surface2); border:1.5px solid var(--border);
-            border-radius:var(--radius-sm); color:var(--text); font-size:15px; font-family:inherit;
-            transition:border-color .2s ease, box-shadow .2s ease; outline:none;
-        }
-        .input-field:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-light); }
-        .input-field::placeholder{ color:var(--text-tertiary); }
-
-        .btn{
-            width:100%; padding:14px 20px; border:none; border-radius:var(--radius-sm); font-size:15px; font-weight:700;
-            cursor:pointer; transition:all .2s ease; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px;
-        }
-        .btn:active{ transform:scale(.97); }
-        .btn-primary{ background:var(--accent); color:#fff; box-shadow:0 4px 14px rgba(26,115,232,0.25); }
-        .btn-primary:hover{ background:var(--accent-hover); box-shadow:0 6px 20px rgba(26,115,232,.35); transform:translateY(-1px); }
-        .btn-primary:disabled{ opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
-
-        .btn-small{ width:auto; padding:8px 16px; font-size:13px; border-radius:10px; font-weight:600; }
-        .btn-ghost{ background:transparent; color:var(--text-secondary); border:1.5px solid var(--border); }
-        .btn-ghost:hover{ background:var(--surface2); border-color:var(--text-tertiary); }
-        .btn-danger{ background:rgba(228,30,63,0.07); color:var(--danger); border:1.5px solid rgba(228,30,63,.2); }
-        .btn-danger:hover{ background:rgba(228,30,63,.12); }
-        .btn-row{ display:flex; gap:10px; }
-        .btn-row .btn{ flex:1; }
-
-        .divider{ text-align:center; color:var(--text-tertiary); font-size:12px; margin:20px 0; position:relative; }
-        .divider::before, .divider::after{ content:''; position:absolute; top:50%; width:28%; height:1px; background:var(--border); }
-        .divider::before{ left:0; } .divider::after{ right:0; }
-
-        .link-hint{ font-size:12px; color:var(--text-tertiary); text-align:center; margin-top:4px; }
-
-        /* ===== Waiting View ===== */
-        .waiting-state{ text-align:center; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        .waiting-icon{ margin-bottom:20px; }
-        .waiting-spinner{
-            width:44px; height:44px; border:3.5px solid var(--border); border-top-color:var(--accent);
-            border-radius:50%; animation:spin .7s linear infinite; margin:0 auto 18px;
-        }
-        @keyframes spin{to{transform:rotate(360deg)} }
-        .waiting-title{ font-size:18px; font-weight:700; color:var(--text); margin-bottom:6px; }
-        .waiting-subtitle{ font-size:13px; color:var(--text-secondary); line-height:1.5; min-height:40px; }
-
-        .room-display{
-            background:var(--surface2); border:1.5px dashed var(--border); border-radius:var(--radius-sm);
-            padding:14px 18px; font-family:'SF Mono','Consolas','Courier New',monospace;
-            font-size:15px; font-weight:600; color:var(--accent); word-break:break-all;
-            letter-spacing:.5px; cursor:pointer; user-select:all; transition:all .2s ease;
-            margin:20px 0 6px; text-align:center; max-width:300px; margin-left:auto; margin-right:auto;
-        }
-        .room-display:hover{ border-color:var(--accent); background:var(--accent-light); }
-        .room-copy-hint{ font-size:11px; color:var(--text-tertiary); margin-bottom:24px; }
-
-        .fp-box{
-            background:rgba(0,168,107,0.06); border:1px solid rgba(0,168,107,0.15); border-radius:var(--radius-sm);
-            padding:12px 16px; font-size:12px; color:var(--text-secondary); margin:12px auto 24px; max-width:320px; text-align:left;
-        }
-        .fp-box code{ font-family:'SF Mono',Consolas,monospace; color:var(--success); font-weight:700; font-size:13px; }
-
-        .waiting-actions{ margin-top:auto; padding-top:16px; }
-        .waiting-tip{ font-size:11px; color:var(--text-tertiary); text-align:center; margin-top:14px; line-height:1.6; }
-
-        /* ===== Chat View ===== */
-        .chat-header{
-            display:flex; align-items:center; gap:12px; padding:12px 20px;
-            border-bottom:1px solid var(--border); flex-shrink:0; background:var(--surface);
-        }
-        .chat-avatar{
-            width:38px; height:38px; border-radius:50%;
-            background:linear-gradient(135deg,var(--accent),#0d47a1);
-            display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;
-        }
-        .chat-partner-info{ flex:1; min-width:0; }
-        .chat-partner-name{ font-weight:700; font-size:14px; color:var(--text); }
-        .chat-partner-status{ font-size:11px; color:var(--text-secondary); display:flex; align-items:center; gap:5px; }
-        .status-dot{ width:7px; height:7px; border-radius:50%; background:var(--success); display:inline-block; flex-shrink:0; }
-
-        .sound-toggle{
-            background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;
-            padding:6px; border-radius:50%; transition:background .2s;
-        }
-        .sound-toggle:hover{ background:var(--surface2); }
-
-        .chat-messages{
-            flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:6px;
-            background:var(--bg);
-        }
-        .chat-messages::-webkit-scrollbar{width:4px}
-        .chat-messages::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px}
-
-        .msg-row{ display:flex; flex-direction:column; max-width:78%; animation:msgIn .2s ease-out; }
-        .msg-row.self{ align-self:flex-end; align-items:flex-end; }
-        .msg-row.other{ align-self:flex-start; align-items:flex-start; }
-        @keyframes msgIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
-
-        .msg-bubble{
-            padding:10px 15px; border-radius:18px; font-size:14px; line-height:1.46;
-            word-break:break-word; white-space:pre-wrap;
-        }
-        .msg-row.self .msg-bubble{ background:var(--bubble-self); color:#fff; border-bottom-right-radius:6px; }
-        .msg-row.other .msg-bubble{ background:var(--bubble-other); color:var(--text); border-bottom-left-radius:6px; }
-
-        .msg-meta{ font-size:10px; color:var(--text-tertiary); margin-top:3px; padding:0 4px; }
-        .msg-nickname{ font-weight:600; }
-
-        .msg-system{
-            align-self:center; font-size:11px; color:var(--text-tertiary);
-            padding:4px 14px; background:rgba(128,128,128,.08); border-radius:16px; margin:4px 0;
-        }
-
-        .typing-indicator{
-            font-size:12px; color:var(--text-secondary); padding:6px 14px;
-            align-self:flex-start; background:var(--bubble-other); border-radius:18px; border-bottom-left-radius:6px;
-            animation:typingPulse 1.4s infinite;
-        }
-        @keyframes typingPulse{0%,100%{opacity:.6}50%{opacity:1}}
-
-        .empty-state{
-            flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-            color:var(--text-secondary); text-align:center; padding:36px 20px;
-        }
-        .empty-state .icon{ width:56px; height:56px; margin-bottom:16px; opacity:.35; }
-        .empty-state p{ font-size:13px; line-height:1.55; }
-
-        /* ===== Chat Input ===== */
-        .chat-input-area{
-            padding:10px 16px 16px; border-top:1px solid var(--border);
-            display:flex; gap:10px; align-items:flex-end; flex-shrink:0;
-            background:var(--surface);
-        }
-        .chat-textarea{
-            flex:1; resize:none; background:var(--surface2); border:1.5px solid var(--border);
-            border-radius:20px; padding:10px 18px; color:var(--text); font-size:14px;
-            font-family:inherit; outline:none; max-height:100px; min-height:42px; line-height:1.4;
-            transition:border-color .2s ease;
-        }
-        .chat-textarea:focus{ border-color:var(--accent); }
-        .chat-textarea::placeholder{ color:var(--text-tertiary); }
-
-        .send-btn{
-            width:42px; height:42px; min-width:42px; border-radius:50%; border:none;
-            background:var(--accent); color:#fff; font-size:17px; cursor:pointer;
-            transition:all .2s ease; display:flex; align-items:center; justify-content:center;
-            flex-shrink:0;
-        }
-        .send-btn:hover{ transform:scale(1.05); box-shadow:0 4px 14px rgba(26,115,232,.3); }
-        .send-btn:active{ transform:scale(.92); }
-        .send-btn:disabled{ opacity:.35; cursor:not-allowed; transform:none; box-shadow:none; }
-
-        /* ===== Toast ===== */
-        .toast{
-            position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-120px);
-            background:var(--surface); color:var(--text); padding:10px 22px; border-radius:24px;
-            font-size:13px; font-weight:600; box-shadow:var(--shadow-lg); z-index:200;
-            pointer-events:none; transition:transform .3s cubic-bezier(.175,.885,.32,1.275); border:1px solid var(--border);
-        }
-        .toast.show{ transform:translateX(-50%) translateY(0); }
-
-        /* ===== Responsive ===== */
-        @media(max-width:400px){
-            .view{ padding:22px 18px; }
-            .chat-messages{ padding:12px 14px; }
-            .msg-row{ max-width:85%; }
-            .chat-input-area{ padding:8px 12px 12px; }
-        }
-
-        /* 版本号 */
-        .version-footer{
-            text-align:center; padding:6px 0; font-size:10px; color:var(--text-tertiary);
-            flex-shrink:0; letter-spacing:0.03em; opacity:.5;
-        }
+        @media(max-width:400px){.vw{padding:22px 18px}.msgs{padding:12px 14px}.mr{max-width:85%}.cia{padding:8px 12px 12px}}
+        .ver{text-align:center;padding:6px 0;font-size:10px;color:var(--t3);flex-shrink:0;letter-spacing:.03em;opacity:.5}
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <div class="app-header">
-            <span class="app-title">🔒 匿名P2P聊天</span>
-            <span class="app-badge badge-idle" id="statusBadge">就绪</span>
-        </div>
-        <div class="main-content">
-
-            <!-- Welcome - 输入昵称 + 房间名 -->
-            <div class="view active" id="viewWelcome">
-                <div class="welcome-brand">
-                    <div class="welcome-logo">
-                        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-                    </div>
-                    <h1>匿名 P2P 聊天</h1>
-                    <p>输入相同房间名，即可与对方建立加密连接</p>
-                </div>
-                <div class="info-banner">通过 <strong>PeerJS (WebRTC)</strong> 端到端加密直连。Cloudflare TURN 中继确保穿透。</div>
-                <div class="input-group"><label>你的昵称</label><input class="input-field" id="inputNickname" placeholder="给自己起个名字" maxlength="20" autocomplete="off"></div>
-                <div class="input-group"><label>房间名</label><input class="input-field" id="inputRoom" placeholder="双方输入同一个名称" maxlength="30" autocomplete="off"></div>
-                <button class="btn btn-primary" id="btnEnter" onclick="window._enterRoom()" disabled>进入房间</button>
-                <div class="divider">或</div>
-                <div class="link-hint">点击好友分享的链接可自动加入房间</div>
-            </div>
-
-            <!-- Waiting - 等待对方加入 -->
-            <div class="view" id="viewWaiting">
-                <div class="waiting-state">
-                    <div class="waiting-icon">
-                        <div class="waiting-spinner"></div>
-                    </div>
-                    <div class="waiting-title" id="waitTitle">等待对方加入</div>
-                    <div class="waiting-subtitle" id="waitSubtitle">请确保对方输入了相同房间名</div>
-                </div>
-                <div class="room-display" id="waitRoomBox" title="点击复制房间名"></div>
-                <div class="room-copy-hint">点击上方名称可复制给对方</div>
-                <div class="fp-box" id="waitFingerprint" style="display:none">当前ID：<code id="fpDisplay"></code><br><span style="color:var(--text-tertiary);font-size:11px">连接成功后双方将显示相同验证码</span></div>
-                <div class="waiting-actions">
-                    <div class="btn-row">
-                        <button class="btn btn-ghost btn-small" id="btnCancelWait">返回</button>
-                        <button class="btn btn-primary btn-small" id="btnReconnect">刷新重连</button>
-                    </div>
-                </div>
-                <div class="waiting-tip">提示：双方需输入完全一致的房间名<br>通常在 3-15 秒内完成连接</div>
-            </div>
-
-            <!-- Chat -->
-            <div class="view" id="viewChat">
-                <div class="chat-header">
-                    <div class="chat-avatar" id="partnerAvatar">?</div>
-                    <div class="chat-partner-info">
-                        <div class="chat-partner-name" id="partnerName">对方</div>
-                        <div class="chat-partner-status" id="partnerStatus"><span class="status-dot"></span>已连接 · P2P 加密</div>
-                    </div>
-                    <button class="sound-toggle" id="btnSoundToggle" title="消息提示音">&#128276;</button>
-                    <button class="btn btn-danger btn-small" id="btnLeave" style="font-size:11px;padding:7px 13px;">离开</button>
-                </div>
-                <div class="chat-messages" id="chatMessages">
-                    <div class="empty-state">
-                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-                        <p>加密通道已建立安全<br>发送第一条消息吧</p>
-                    </div>
-                </div>
-                <div class="chat-input-area">
-                    <textarea class="chat-textarea" id="chatInput" rows="1" placeholder="输入消息..." maxlength="2000"></textarea>
-                    <button class="send-btn" id="btnSend" disabled>&#10148;</button>
-                </div>
-            </div>
-        </div>
-        <!-- 版本号固定在页面底部 -->
-        <div class="version-footer" id="versionFooter"></div>
+<div class="app">
+    <div class="hd">
+        <span class="hd-title">🔒 Anonymous P2P Chat</span>
+        <span class="badge bi" id="sb">Ready</span>
     </div>
-    <div class="toast" id="toast"></div>
+    <div class="mc">
+        <!-- Welcome -->
+        <div class="vw on" id="vW">
+            <div class="brand"><div class="logo"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg></div><h1>Anonymous P2P Chat</h1><p>Enter the same room name to connect with peer via encrypted P2P channel</p></div>
+            <div class="banner">End-to-end encryption via <strong>PeerJS (WebRTC)</strong>. Multi-signaling + TURN relay ensures NAT traversal.</div>
+            <div class="ig"><label>Your Nickname</label><input class="if" id="ni" placeholder="Your name" maxlength="20" autocomplete="off"></div>
+            <div class="ig"><label>Room Name</label><input class="if" id="ri" placeholder="Both enter same room name" maxlength="30" autocomplete="off"></div>
+            <button class="btn bp" id="be" onclick="_enter()" disabled>Enter Room</button>
+            <div class="div">or</div>
+            <div class="hint">Click shared link to auto-join room</div>
+        </div>
 
-    <script>
-    // ===== 匿名P2P聊天 v15 — PeerJS WebRTC + 增强连接可靠性 =====
-    var APP_VERSION='v15';
-    (function(){
-        var $=function(s){return document.querySelector(s)};
-        var views={welcome:$('#viewWelcome'),waiting:$('#viewWaiting'),chat:$('#viewChat')};
-        var statusBadge=$('#statusBadge'),chatMessages=$('#chatMessages'),chatInput=$('#chatInput'),btnSend=$('#btnSend'),toast=$('#toast');
-        var state={nickname:'',roomName:'',partnerNickname:'',soundEnabled:true,connected:false,myId:''};
-        var peer=null,dataConn=null;
+        <!-- Waiting -->
+        <div class="vw" id="vWt">
+            <div class="wst">
+                <div class="wst"><div class="spn"></div></div>
+                <div class="wt" id="wtT">Waiting for peer</div>
+                <div class="ws" id="wtS">Make sure peer entered same room name</div>
+            </div>
+            <div class="room" id="wrBox" title="Click to copy"></div>
+            <div class="rcp">Click above to copy room name</div>
+            <div class="fp" id="fpBox" style="display:none">ID: <code id="fpD"></code><br><span style="color:var(--t3);font-size:11px">Verification code appears after connection</span></div>
+            <div class="wa"><div class="br"><button class="btn bg bsm" id="bcBack">Back</button><button class="btn bp bsm" id="bcRecon">Refresh & Reconnect</button></div></div>
+            <div class="wtip">Both must enter identical room name<br>Connection usually completes in 3-15 seconds</div>
+        </div>
 
-        function showView(v){
-            Object.values(views).forEach(function(x){x.classList.remove('active')});
-            v.classList.add('active');
-            if(v===views.chat){setTimeout(function(){chatMessages.scrollTop=chatMessages.scrollHeight;chatInput.focus()},100)}
-        }
-        function showToast(msg,dur){dur=dur||2000;toast.textContent=msg;toast.classList.add('show');clearTimeout(toast._tid);toast._tid=setTimeout(function(){toast.classList.remove('show')},dur)}
-        function playSound(){
-            if(!state.soundEnabled)return;
-            try{var ctx=new(window.AudioContext||window.webkitAudioContext)(),o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.setValueAtTime(800,ctx.currentTime);o.frequency.setValueAtTime(1000,ctx.currentTime+.08);g.gain.setValueAtTime(.15,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.2);o.start(ctx.currentTime);o.stop(ctx.currentTime+.2)}catch(e){}
-        }
-        function getTimeStr(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
-        function randomEmoji(){var e=['?','?','?','?','?','?','?','?','?','?','?','?','?','?','?','?','?','?','?','?'];return e[Math.floor(Math.random()*e.length)]}
+        <!-- Chat -->
+        <div class="vw" id="vCh">
+            <div class="chdr">
+                <div class="cav" id="pAv">?</div>
+                <div class="ci"><div class="cn" id="pNm">Peer</div><div class="cs" id="pSt"><span class="sdot"></span>Connected · P2P Encrypted</div></div>
+                <button class="stg" id="btSound">&#128276;</button>
+                <button class="btn bd bsm" id="btLeave" style="font-size:11px;padding:7px 13px">Leave</button>
+            </div>
+            <div class="msgs" id="msgs">
+                <div class="es"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><p>Encrypted channel ready<br>Send your first message</p></div>
+            </div>
+            <div class="cia"><textarea class="cta" id="ctA" rows="1" placeholder="Type a message..." maxlength="2000"></textarea><button class="sb" id="btSend" disabled>&#10148;</button></div>
+        </div>
+    </div>
+    <div class="ver" id="verF"></div>
+</div>
+<div class="toast" id="toast"></div>
 
-        function updateBadge(){
-            if(state.connected){statusBadge.textContent='已连接';statusBadge.className='app-badge badge-ok'}
-            else if(peer&&!state.connected){statusBadge.textContent='等待中';statusBadge.className='app-badge badge-warn'}
-            else{statusBadge.textContent='就绪';statusBadge.className='app-badge badge-idle'}
-        }
-        function updateChatHead(){
-            $('#partnerName').textContent=state.partnerNickname||'对方';
-            $('#partnerAvatar').textContent=randomEmoji();
-            $('#partnerStatus').innerHTML=state.connected?'<span class="status-dot"></span>已连接 · P2P 加密 · 房间 '+state.roomName:'等待连接...';
-        }
-        function addChatMsg(text,type,nickname){
-            var row=document.createElement('div');row.className='msg-row '+type;
-            if(type==='other'){var ns=document.createElement('span');ns.className='msg-nickname';ns.textContent=nickname||'对方';row.appendChild(ns)}
-            var b=document.createElement('div');b.className='msg-bubble';b.textContent=text;row.appendChild(b);
-            var t=document.createElement('span');t.className='msg-meta';t.textContent=getTimeStr();row.appendChild(t);
-            var em=chatMessages.querySelector('.empty-state');if(em)em.remove();
-            var ti=chatMessages.querySelector('.typing-indicator');if(ti)ti.remove();
-            chatMessages.appendChild(row);chatMessages.scrollTop=chatMessages.scrollHeight;
-        }
-        function addSystemMsg(text){var d=document.createElement('div');d.className='msg-system';d.textContent=text;chatMessages.appendChild(d);chatMessages.scrollTop=chatMessages.scrollHeight}
-        var typingTimer=null;
-        function showTyping(isTyping){
-            var ex=chatMessages.querySelector('.typing-indicator');
-            if(isTyping){if(!ex){var d=document.createElement('div');d.className='typing-indicator';d.textContent='对方正在输入...';chatMessages.appendChild(d);chatMessages.scrollTop=chatMessages.scrollHeight}clearTimeout(typingTimer);typingTimer=setTimeout(function(){var el=chatMessages.querySelector('.typing-indicator');if(el)el.remove()},3000)}
-            else{if(ex)ex.remove()}
-        }
-        function clearChat(){chatMessages.innerHTML=''}
+<script>
+// ===== v16 — Multi-Signaling + Multi-TURN + Fast Handshake =====
+(function(){
+    var $=function(s){return document.querySelector(s)};
+    var V={w:$('#vW'),wt:$('#vWt'),ch:$('#vCh')};
+    var sb=$('#sb'),ms=$('#msgs'),ci=$('#ctA'),bs=$('#btSend'),ts=$('#toast');
+    var S={nn:'',rn:'',pn:'',snd:true,ct:false};
+    var pr=null,dc=null;
+    var t0=0,timer=null,rTimer=null,nTry=0,pending=[],bid='';
 
-        async function copyText(text){
-            if(navigator.clipboard)return navigator.clipboard.writeText(text).catch(function(){return fallbackCopy(text)});
-            return fallbackCopy(text);
-        }
-        function fallbackCopy(text){
-            var ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);return Promise.resolve()
-        }
+    // ★ Multiple signaling servers (failover)
+    var SIGS=[{h:'0.peers.chat',p:'/myapp'},{h:'0.peerjs.com',p:'/'},{h:'0.metered.ca',p:'/myapp'}];
+    // ★ ICE: STUN + free TURN servers
+    var ICE={
+        iceServers:[
+            {urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:stun2.l.google.com:19302'},
+            {urls:'stun:stun.cloudflare.com:3478'},
+            {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+            {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+            {urls:'turn:numb.viagenie.ca:3478?transport=tcp',username:'webrtc@live.com',credential:'muazkh'}
+        ],iceCandidatePoolSize:4,iceTransportPolicy:'all'
+    };
+    var PROBE_MS=2000;
 
-        // ===== 核心工具：房间名 → 确定性PeerID =====
-        function roomToPeerId(roomName){
-            var hash=0;
-            for(var i=0;i<roomName.length;i++){
-                var c=roomName.charCodeAt(i);
-                hash=((hash<<5)-hash+c)&0xffffffff;
-            }
-            var hex=(hash>>>0).toString(36);
-            return 'anon-'+roomName.toLowerCase().replace(/[^a-z0-9]/g,'-')+'-'+hex;
-        }
+    function show(v){Object.values(V).forEach(function(x){x.classList.remove('on')});v.classList.add('on');if(v===V.ch){setTimeout(function(){ms.scrollTop=ms.scrollHeight;ci.focus()},100)}}
+    function toast(m,d){d=d|0||2000;ts.textContent=m;ts.classList.add('show');clearTimeout(ts._t);ts._t=setTimeout(function(){ts.classList.remove('show')},d)}
+    function snd(){if(!S.snd)return;try{var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.setValueAtTime(800,c.currentTime);o.frequency.setValueAtTime(1000,c.currentTime+.08);g.gain.setValueAtTime(.15,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.2);o.start(c.currentTime);o.stop(c.currentTime+.2)}catch(e){}}
+    function now(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
+    function emoji(){return String.fromCodePoint(0x1F465+Math.floor(Math.random()*30))}
+    function uB(){if(S.ct){sb.textContent='Connected';sb.className='badge bk'}else if(pr&&!S.ct){sb.textContent='Waiting';sb.className='badge bw'}else{sb.textContent='Ready';sb.className='badge bi'}}
+    function uCH(){$('#pNm').textContent=S.pn||'Peer';$('#pAv').textContent=emoji();$('#pSt').innerHTML=S.ct?'<span class="sdot"></span>Connected · P2P Encrypted · '+S.rn:'Connecting...'}
 
-        // ===== PeerJS 连接管理 =====
-        var waitStartTime=0,waitTimer=null,reconnectTimer=null;
-        var connectAttempts=0;
-        var pendingConnections=[]; // ★ 追踪所有待处理的连接
+    function addMsg(txt,tp,nk){var r=document.createElement('div');r.className='mr '+(tp==='s'?'slf':'oth');if(tp!=='s'){var s=document.createElement('span');s.className='mn';s.textContent=nk||'Peer';r.appendChild(s)}var b=document.createElement('div');b.className='mb';b.textContent=txt;r.appendChild(b);var t=document.createElement('span');t.className='mm';t.textContent=now();r.appendChild(t);var e=ms.querySelector('.es');if(e)e.remove();var ti=ms.querySelector('.ti');if(ti)ti.remove();ms.appendChild(r);ms.scrollTop=ms.scrollHeight}
+    function sysMsg(t){var d=document.createElement('div');d.className='msys';d.textContent=t;ms.appendChild(d);ms.scrollTop=ms.scrollHeight}
+    var ttT=null;
+    function typing(it){var ex=ms.querySelector('.ti');if(it){if(!ex){var d=document.createElement('div');d.className='ti';d.textContent='Peer is typing...';ms.appendChild(d);ms.scrollTop=ms.scrollHeight}clearTimeout(ttT);ttT=setTimeout(function(){var el=ms.querySelector('.ti');if(el)el.remove()},3000)}else if(ex)ex.remove()}
 
-        function updateWaitStatus(){
-            if(!waitTimer)return;
-            var elapsed=Math.floor((Date.now()-waitStartTime)/1000);
-            var min=Math.floor(elapsed/60),sec=elapsed%60;
-            var timeStr=min>0?min+'分'+sec+'秒':sec+'秒';
-            var tipText='';
-            if(elapsed<5)tipText='正在连接信令服务器...';
-            else if(elapsed<15)tipText='已连接信令，等待对方进入...';
-            else if(elapsed<30)tipText='等待中... 请确认房间名一致';
-            else tipText='连接耗时较长？建议双方都点击刷新重连';
-            var attText=connectAttempts>0?' | 已探测: '+connectAttempts+'次':'';
-            $('#waitSubtitle').textContent='已等待 '+timeStr+' | '+tipText+attText;
-        }
+    function cpTx(t){if(navigator.clipboard)return navigator.clipboard.writeText(t).catch(function(){return fCp(t)});return fCp(t)}
+    function fCp(t){var ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);return Promise.resolve()}
+    function pid(rn){var h=0;for(var i=0;i<rn.length;i++)h=((h<<5)-h+rn.charCodeAt(i))&0xffffffff;return 'anon-'+rn.toLowerCase().replace(/[^a-z0-9]/g,'-')+'-'+(h>>>0).toString(36)}
 
-        function loadPeerJS(){
-            return new Promise(function(resolve,reject){
-                if(typeof Peer!=='undefined'){resolve(Peer);return}
-                var s=document.createElement('script');
-                s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';
-                s.onload=function(){console.log('[PeerJS] 库加载成功');resolve(Peer)};
-                s.onerror=function(){reject(new Error('PeerJS库加载失败，请检查网络'))};
-                document.head.appendChild(s);
+    function uWS(){if(!timer)return;var e=Math.floor((Date.now()-t0)/1000),sec=e%60,min=Math.floor(e/60);var tp=e<5?'Connecting signal...':e<15?'Signal OK, waiting peer...':e<30?'Waiting...':'Taking long? Both click Refresh';var ac=nTry>0?' | Probed:'+nTry+'x':'';$('#wtS').textContent=(min?min+'m':'')+sec+'s '+tp+ac}
+    function loadPJ(){return new Promise(function(r,j){if(typeof Peer!=='undefined'){r(Peer);return}var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';s.onload=function(){console.log('[PJ] loaded');r(Peer)};s.onerror=function(){j(Error('PeerJS load failed'))};document.head.appendChild(s)})}
+    function clPc(){pending.forEach(function(c){try{c.close()}catch(e){}});pending=[]}
+    function stopR(){clearTimeout(rTimer);rTimer=null}
+    function cleanup(){stopR();clearInterval(timer);timer=null;nTry=0;clPc();try{if(dc)dc.close()}catch(e){}try{if(pr&&pr.destroy)pr.destroy()}catch(e){}dc=null;pr=null;S.ct=false}
+
+    window._enter=function(){
+        S.nn=$('#ni').value.trim();S.rn=$('#ri').value.trim().toLowerCase();
+        if(!S.nn||!S.rn){toast('Enter nickname and room name');return;}
+        cleanup();ms.innerHTML='';S.pn='';S.ct=false;bs.disabled=true;t0=Date.now();
+        show(V.wt);
+        $('#wtT').textContent='Room: '+S.rn;$('#wtS').textContent='Initializing...';
+        $('#wrBox').textContent=S.rn;$('#fpBox').style.display='none';
+        uB();timer=setInterval(uWS,1000);
+        loadPJ().then(connect).catch(function(e){clearInterval(timer);show(V.w);toast('Load fail:'+e.message,4000)});
+    };
+
+    function connect(){
+        bid=pid(S.rn);var a=bid+'-b',b=bid+'-b';
+        console.log('[v16] base:',bid);
+        $('#fpD').textContent=bid.replace(/-/g,'').substr(0,8).toUpperCase();
+        $('#fpBox').style.display='block';
+        reg(a,b,0);
+    }
+
+    function reg(myId,oId,idx){
+        if(S.ct)return;
+        var mx=SIGS.length*4;
+        if(idx>=mx){toast('All signals unreachable',5000);clearInterval(timer);show(V.w);return;}
+        var sv=SIGS[idx%SIGS.length],att=idx+1;
+        console.log('[v16] reg#'+att,' '+myId,'@'+sv.h);
+        $('#wtS').textContent='Signal '+sv.h+' ('+att+')';
+
+        var p=new Peer(myId,{debug:0,config:ICE,host:sv.h,port:443,path:sv.p,secure:true,pingInterval:3000});
+        var done=false;
+        var timeout=setTimeout(function(){if(done||S.ct)return;done=true;console.log('[v16] sigTO',sv.h);try{p.destroy()}catch(e){}reg(oId,idx+1)},8000);
+
+        p.on('open',function(id){
+            if(done||S.ct)return;done=true;clearTimeout(timeout);
+            console.log('[v16] ✓sigOK!',id,'@'+sv.h);
+            try{if(pr&&pr!==p)try{pr.destroy()}catch(e){}}catch(e){}
+            pr=p;S.myId=id;
+            $('#fpD').textContent=(bid||'').replace(/-/g,'').substr(0,8).toUpperCase();
+            $('#wtS').textContent='Ready, probing peer...';uB();
+
+            p.on('connection',function(cn){
+                if(S.ct)return;
+                console.log('[v16] ←inConn',cn.peer);
+                stopR();clPc();inConn(cn);
             });
-        }
-
-        function closePendingConnections(){
-            pendingConnections.forEach(function(c){try{c.close()}catch(e){}});
-            pendingConnections=[];
-        }
-
-        function cleanup(){
-            stopReconnect();
-            clearInterval(waitTimer);waitTimer=null;
-            connectAttempts=0;
-            closePendingConnections();
-            try{if(dataConn){dataConn.close()}}catch(e){}
-            try{if(peer&&peer.destroy){peer.destroy()}}catch(e){}
-            dataConn=null;peer=null;
-            state.connected=false;
-        }
-
-        function enterRoom(){
-            state.nickname=nickInput.value.trim();
-            state.roomName=roomInput.value.trim().toLowerCase();
-            if(!state.nickname||!state.roomName){showToast('请填写昵称和房间名');return;}
-
-            cleanup();
-            clearChat();state.partnerNickname='';state.connected=false;btnSend.disabled=true;
-            waitStartTime=Date.now();
-
-            showView(views.waiting);
-            $('#waitTitle').textContent='进入房间: '+state.roomName;
-            $('#waitSubtitle').textContent='正在加载模块并连接信令...';
-            $('#waitRoomBox').textContent=state.roomName;
-            $('#waitFingerprint').style.display='none';
-            updateBadge();
-            waitTimer=setInterval(updateWaitStatus,1000);
-
-            loadPeerJS().then(function(){
-                return doConnect();
-            }).catch(function(err){
-                console.error('[PeerJS] 加载失败:', err);
-                clearInterval(waitTimer);waitTimer=null;
-                showView(views.welcome);
-                showToast('模块加载失败: '+(err.message||'未知错误'), 4000);
-            });
-        }
-
-        function doConnect(){
-            var baseId=roomToPeerId(state.roomName);
-            console.log('[P2P] 房间ID:', baseId, 'Room:', state.roomName);
-
-            // ★ 双方各用不同ID，互为对方的连接目标
-            var idA=baseId+'-a';
-            var idB=baseId+'-b';
-            state._idA=idA; state._idB=idB;
-
-            var fp=baseId.replace(/-/g,'').substring(0,8);
-            $('#fpDisplay').textContent=fp;
-            $('#waitFingerprint').style.display='block';
-            $('#waitSubtitle').textContent='正在连接信令服务器...';
-
-            var rtcConfig={
-                iceServers:[
-                    {urls:'stun:stun.l.google.com:19302'},
-                    {urls:'stun:stun1.l.google.com:19302'},
-                    {urls:'stun:stun2.l.google.com:19302'},
-                    {urls:'stun:stun3.l.google.com:19302'},
-                    {urls:'stun:stun4.l.google.com:19302'},
-                    {urls:'stun:stun.cloudflare.com:3478'},
-                    {urls:'stun:stun.stunprotocol.org:3478'},
-                    // ★ TURN中继 — NAT穿透失败时的后备方案
-                    {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
-                    {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
-                    {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}
-                ],
-                iceCandidatePoolSize:2,
-                iceTransportPolicy:'all'
-            };
-
-            tryRegister(idA, idB, rtcConfig, 0);
-        }
-
-        function tryRegister(myId, otherId, rtcConfig, attempt){
-            if(state.connected)return;
-            if(attempt>20){showToast('连接超时，请刷新重试', 4000);clearInterval(waitTimer);showView(views.welcome);return;}
-
-            console.log('[P2P] 注册尝试 #'+(attempt+1)+' ID:', myId);
-            $('#waitSubtitle').textContent=attempt>0?'正在重试连接... ('+(attempt+1)+'/21)':'正在连接信令服务器...';
-
-            var p=new Peer(myId,{debug:0,config:rtcConfig});
-            var done=false;
-            function finish(){done=true;}
-
-            p.on('open',function(id){
-                if(done||state.connected)return;
-                finish();
-                console.log('[P2P] ✓ 注册成功! 我的ID:', id);
-
-                try{if(peer&&peer!==p&&peer.destroy)peer.destroy()}catch(e){}
-                peer=p; state.myId=id;
-
-                var fp=roomToPeerId(state.roomName).replace(/-/g,'').substring(0,8);
-                $('#fpDisplay').textContent=fp;
-                $('#waitFingerprint').style.display='block';
-                $('#waitSubtitle').textContent='已就绪，正在探测对方...';
-                updateBadge();
-
-                // ★ 启动探测
-                startProbing(otherId);
-
-                // ★ 监听对方的主动连接
-                peer.on('connection',function(incomingConn){
-                    if(state.connected)return;
-                    console.log('[P2P] ← 收到对方连接! Peer:', incomingConn.peer);
-                    stopReconnect();
-                    closePendingConnections(); // 清理自己发起的未完成连接
-                    setupConnection(incomingConn);
-                });
-            });
-
-            p.on('error',function(err){
-                if(done||state.connected)return;
-                console.error('[P2P] 错误:', err.type);
-
-                if(err.type==='unavailable-id'){
-                    // ID已被对方占用 → 切换到另一个ID
-                    finish();
-                    console.log('[P2P] ID被占用:', myId, '→ 切换为:', otherId);
-                    try{p.destroy()}catch(e){}
-                    tryRegister(otherId, myId, rtcConfig, attempt);
-                    return;
-                }
-
-                if(err.type==='network'||err.type==='server-error'||err.type==='socket-error'||err.type==='socket-closed'){
-                    finish();
-                    var delay=Math.min((attempt+1)*1500, 10000);
-                    console.log('[P2P] 网络问题，', delay/1000+'s后重试');
-                    try{p.destroy()}catch(e){}
-                    setTimeout(function(){if(!state.connected)tryRegister(myId, otherId, rtcConfig, attempt+1)},delay);
-                    return;
-                }
-
-                finish();
-                try{p.destroy()}catch(e){}
-                if(!state.connected){
-                    setTimeout(function(){if(!state.connected)tryRegister(myId, otherId, rtcConfig, attempt+1)},3000);
-                }
-            });
-
-            p.on('disconnected',function(){
-                if(done||state.connected)return;
-                console.log('[P2P] 信令断开，自动重连...');
-                try{p.reconnect()}catch(e){}
-            });
-        }
-
-        // ===== 探测连接 =====
-        function startProbing(otherId){
-            if(state.connected)return;
-            stopReconnect();
-            closePendingConnections();
-
-            function probe(){
-                if(state.connected)return;
-                if(!peer||peer.destroyed)return;
-
-                connectAttempts++;
-                console.log('[P2P] → 探测 #'+connectAttempts+' 目标:', otherId);
-                updateWaitStatus();
-
-                try{
-                    var conn=peer.connect(otherId,{reliable:true,serialization:'json'});
-                    pendingConnections.push(conn);
-
-                    // ★ 只监听 open 和 error，不重复监听 data
-                    var handled=false;
-                    conn.on('open',function(){
-                        if(handled||state.connected)return;
-                        handled=true;
-                        console.log('[P2P] ✅ 我方发起的连接已打开!');
-                        stopReconnect();
-                        closePendingConnectionsExcept(conn);
-                        onConnEstablished(conn);
-                    });
-                    conn.on('error',function(err){
-                        if(handled)return;
-                        console.log('[P2P] 连接错误:', err.message||err.type);
-                    });
-                }catch(e){
-                    console.log('[P2P] 探测异常:', e.message);
-                }
-
-                // ★ 用 setTimeout 递归，不用 setInterval
-                reconnectTimer=setTimeout(probe, 3000);
-            }
-
-            probe(); // 立即开始第一次探测
-        }
-
-        function closePendingConnectionsExcept(keep){
-            pendingConnections.forEach(function(c){if(c!==keep)try{c.close()}catch(e){}});
-            pendingConnections=keep?[keep]:[];
-        }
-
-        function stopReconnect(){
-            clearTimeout(reconnectTimer);
-            reconnectTimer=null;
-        }
-
-        // ★ 统一处理收到的连接（对方主动连接或自己探测成功）
-        function setupConnection(conn){
-            var handled=false;
-            conn.on('open',function(){
-                if(handled||state.connected)return;
-                handled=true;
-                console.log('[P2P] 连接已打开 (被动方)');
-                onConnEstablished(conn);
-            });
-            conn.on('error',function(err){
-                console.error('[P2P] 连接错误:', err);
-            });
-            conn.on('close',function(){
-                console.log('[P2P] 连接关闭 (被动方)');
-                onConnClose();
-            });
-
-            // 可能已经处于open状态
-            if(conn.open&&!handled&&!state.connected){
-                handled=true;
-                console.log('[P2P] 连接已就绪 (同步)');
-                onConnEstablished(conn);
-            }
-        }
-
-        function onConnEstablished(conn){
-            if(state.connected)return;
-            stopReconnect();
-
-            if(dataConn&&dataConn!==conn){
-                console.log('[P2P] 关闭旧数据连接');
-                try{dataConn.close()}catch(e){}
-            }
-            dataConn=conn;
-            state.connected=true;
-            clearInterval(waitTimer);waitTimer=null;
-            connectAttempts=0;
-
-            console.log('[P2P] ✅✅ 加密通道已建立!!');
-
-            $('#waitTitle').textContent='已发现对方！';
-            $('#waitSubtitle').textContent='P2P 加密通道已建立';
-
-            // ★ 发送身份信息
-            var myNonce=Math.random().toString(36).substr(2,10)+Date.now().toString(36);
-            state._myNonce=myNonce;
-            try{conn.send({type:'nonce',value:myNonce})}catch(e){console.error('[P2P] 发送nonce失败:', e)}
-            try{conn.send({type:'nickname',nick:state.nickname})}catch(e){console.error('[P2P] 发送昵称失败:', e)}
-
-            // ★ 注册数据处理器（只注册一次）
-            conn.on('data',handleMsg);
-            conn.on('close',onConnClose);
-            conn.on('error',function(err){console.error('[P2P] 数据通道错误:', err)});
-
-            // 延迟切换到聊天视图
-            setTimeout(function(){
-                if(!views.chat.classList.contains('active')){
-                    updateBadge();updateChatHead();btnSend.disabled=false;
-                    showView(views.chat);
-                    showToast('P2P 加密通道已建立 ✓');
-                }
-            },400);
-        }
-
-        function onConnClose(){
-            console.log('[P2P] 数据连接关闭');
-            if(state.connected){
-                state.connected=false;
-                dataConn=null;
-                updateBadge();
-                btnSend.disabled=true;
-                if(views.chat.classList.contains('active'))addSystemMsg('⚠️ 对方已离开房间');
-            }
-        }
-
-        function handleMsg(data){
-            if(!data||typeof data!=='object')return;
-            console.log('[P2P] 收到:', data.type, data);
-            if(data.type==='nonce'){
-                var theirNonce=data.value;
-                console.log('[P2P] 对方校验码:', theirNonce);
-                var myNonce=state._myNonce||'';
-                var parts=[myNonce, theirNonce].sort();
-                var combined=parts[0]+parts[1];
-                var vCode=simpleHash(combined).substring(0,6).toUpperCase();
-                state._vCode=vCode;
-                console.log('[P2P] 共享验证码:', vCode);
-                $('#fpDisplay').textContent=vCode;
-                addSystemMsg('🔐 安全验证码: '+vCode+' (双方应一致，建议语音确认)');
-            }else if(data.type==='nickname'){
-                state.partnerNickname=data.nick||'对方';
-                updateChatHead();
-                addSystemMsg((data.nick||'对方')+' 加入了聊天');
-            }else if(data.type==='message'){
-                addChatMsg(data.text,'other',state.partnerNickname||'对方');
-                playSound();
-            }else if(data.type==='typing'){
-                showTyping(data.typing);
-            }
-        }
-
-        function simpleHash(str){
-            var h1=0,h2=0;
-            for(var i=0;i<str.length;i++){
-                var c=str.charCodeAt(i);
-                h1=((h1<<5)-h1+c)&0xffffffff;
-                h2=((h2<<7)-h2+c)&0xffffffff;
-            }
-            var hex=((h1>>>0).toString(16)+(h2>>>0).toString(16)).toLowerCase();
-            while(hex.length<8)hex='0'+hex;
-            return hex;
-        }
-
-        function leaveRoom(){
-            cleanup();
-            clearChat();
-            showView(views.welcome);
-            updateBadge();
-        }
-
-        // ===== Event Handlers =====
-        var nickInput=document.getElementById('inputNickname');
-        var roomInput=document.getElementById('inputRoom');
-        var btnEnter=document.getElementById('btnEnter');
-
-        function checkInputs(){
-            var nv=nickInput.value.trim();
-            var rv=roomInput.value.trim();
-            btnEnter.disabled=!(nv&&rv);
-        }
-
-        window._enterRoom = enterRoom;
-
-        nickInput.oninput=checkInputs;
-        roomInput.oninput=checkInputs;
-        nickInput.onkeydown=function(e){if(e.key==='Enter')roomInput.focus()};
-        roomInput.onkeydown=function(e){if(e.key==='Enter'&&!btnEnter.disabled)btnEnter.click()};
-        checkInputs();
-
-        $('#btnCancelWait').addEventListener('click',function(){cleanup();showView(views.welcome);updateBadge()});
-        $('#btnReconnect').addEventListener('click',function(){cleanup();setTimeout(enterRoom,300)});
-        $('#waitRoomBox').addEventListener('click',function(){
-            copyText(state.roomName).then(function(){showToast('✓ 已复制房间名: '+state.roomName)}).catch(function(){showToast('复制失败，请手动选择')});
+            startProbe(oId);
         });
 
-        $('#btnLeave').addEventListener('click',function(){if(confirm('确定要离开吗？'))leaveRoom()});
-
-        function sendMsg(){
-            var text=chatInput.value.trim();if(!text||!state.connected||!dataConn)return;
-            try{dataConn.send({type:'message',text:text});addChatMsg(text,'self',state.nickname);playSound()}catch(e){console.error('[P2P] 发送失败:',e)}
-            chatInput.value='';chatInput.style.height='auto';
-        }
-        btnSend.addEventListener('click',sendMsg);
-        chatInput.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg()}});
-        chatInput.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'});
-
-        var tTimer=null;
-        chatInput.addEventListener('input',function(){
-            if(!state.connected||!dataConn)return;
-            try{dataConn.send({type:'typing',typing:true})}catch(e){}
-            clearTimeout(tTimer);tTimer=setTimeout(function(){try{if(dataConn)dataConn.send({type:'typing',typing:false})}catch(e){}},2000);
+        p.on('error',function(err){
+            if(done||S.ct)return;done=true;clearTimeout(timeout);
+            console.warn('[v16] sigErr:',err.type);
+            try{p.destroy()}catch(e){}
+            if(err.type==='unavailable-id'){reg(oId,idx);return;}
+            reg(myId,idx+1);
         });
+    }
 
-        $('#btnSoundToggle').addEventListener('click',function(){
-            state.soundEnabled=!state.soundEnabled;
-            this.innerHTML=state.soundEnabled?'&#128276;':'&#128277;';
-            showToast(state.soundEnabled?'提示音已开启':'提示音已关闭');
-        });
-
-        function checkURL(){
-            var hash=window.location.hash;
-            if(!hash||!hash.startsWith('#room='))return;
-            hash=hash.substring(1);
-            var params={};
-            hash.split('&').forEach(function(p){var kv=p.split('=');if(kv.length===2)params[kv[0]]=decodeURIComponent(kv[1])});
-            if(!params.room)return;
-            nickInput.value=params.nick||nickInput.value;
-            roomInput.value=params.room;
-            if(params.nick&&!state.nickname)state.nickname=params.nick;
-            checkInputs();
-            if(!btnEnter.disabled){showToast('检测到房间链接，自动加入中...');setTimeout(enterRoom,800)}
+    function startProbe(tid){
+        if(S.ct)return;stopR();clPc();
+        function probe(){
+            if(S.ct||!pr||pr.destroyed)return;
+            nTry++;console.log('[v16] →probe#'+nTry,tid);uWS();
+            try{var c=pr.connect(tid,{reliable:true,serialization:'json'});pending.push(c);outConn(c)}catch(e){}
+            rTimer=setTimeout(probe,PROBE_MS);
         }
-        checkURL();window.addEventListener('hashchange',checkURL);
-        window.addEventListener('beforeunload',function(e){if(state.connected){e.preventDefault();e.returnValue='聊天进行中'}});
+        probe();
+    }
 
-        console.log('匿名P2P聊天 '+APP_VERSION+' | PeerJS WebRTC');
+    function inConn(cn){var hd=false;cn.on('open',function(){if(hd||S.ct)return;hd=true;onOpen(cn)});cn.on('error',function(){});cn.on('close',onClose);if(!hd&&cn.open&&!S.ct){hd=true;onOpen(cn)}}
+    function outConn(cn){var hd=false;cn.on('open',function(){if(hd||S.ct)return;hd=true;stopR();clPc();onOpen(cn)});cn.on('error',function(){})}
 
-        // ★ 版本号显示在页面底部
-        $('#versionFooter').textContent='匿名P2P聊天 · '+APP_VERSION;
+    function onOpen(cn){
+        if(S.ct)return;stopR();
+        if(dc&&dc!==cn){try{dc.close()}catch(e){}}
+        dc=cn;S.ct=true;clearInterval(timer);timer=null;nTry=0;
+        console.log('[v16] ✅✅CONNECTED!',cn.peer);
+        $('#wtT').textContent='Peer Found!';$('#wtS').textContent='P2P Channel Established';
+        var n=Math.random().toString(36).substr(2,10)+Date.now().toString(36);S._myN=n;
+        send(cn,{type:'nonce',value:n});send(cn,{type:'nickname',nick:S.nn});
+        cn.on('data',onData);cn.on('close',onClose);cn.on('error',function(e){console.error(e)});
+        setTimeout(function(){if(!V.ch.classList.contains('on')){uB();uCH();bs.disabled=false;show(V.ch);toast('P2P Encrypted Channel Established ✓')}},400);
+    }
 
-        // 预加载PeerJS库
-        (function preloadPeerJS(){
-            if(typeof Peer!=='undefined'){statusBadge.textContent='就绪';statusBadge.className='app-badge badge-ok';return}
-            statusBadge.textContent='加载中...';statusBadge.className='app-badge badge-warn';
-            var s=document.createElement('script');
-            s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';
-            s.onload=function(){console.log('[Preload] PeerJS预加载成功');statusBadge.textContent='就绪';statusBadge.className='app-badge badge-ok'};
-            s.onerror=function(){console.warn('[Preload] PeerJS加载失败');setTimeout(preloadPeerJS,3000)};
-            document.head.appendChild(s);
-        })();
-    })();
-    </script>
+    function onClose(){if(S.ct){S.ct=false;dc=null;uB();bs.disabled=true;if(V.ch.classList.contains('on'))sysMsg('⚠️ Peer left')}}
+    function send(c,d){try{if(c.open)c.send(d)}catch(e){}}
+
+    function onData(data){
+        if(!data||typeof data!=='object')return;
+        if(data.type==='nonce'){
+            var m=S._myN||'',ps=[m,data.value].sort(),vc=sHash(ps[0]+ps[1]).substring(0,6).toUpperCase();
+            S._vc=vc;$('#fpD').textContent=vc;sysMsg('🔐 VerifyCode: '+vc)
+        }else if(data.type==='nickname'){
+            S.pn=data.nick||'Peer';uCH();sysMsg((data.nick||'Peer')+' joined')
+        }else if(data.type==='message'){
+            addMsg(data.text,'o',S.pn||'Peer');snd()
+        }else if(data.type==='typing'){typing(data.typing)}
+    }
+
+    function sHash(str){var h1=0,h2=0;for(var i=0;i<str.length;i++){var c=str.charCodeAt(i);h1=((h1<<5)-h1+c)&0xffffffff;h2=((h2<<7)-h2+c)&0xffffffff}while((h1>>>0).toString(16)+(h2>>>0).toString(16)).length<8)return '0';return ((h1>>>0).toString(16)+(h2>>>0).toString(16)).toLowerCase()}
+    function leave(){cleanup();ms.innerHTML='';show(V.w);uB()}
+
+    // Events
+    var ni=$('#ni'),ri=$('#ri'),be=$('#be');
+    function ckIn(){be.disabled=!(ni.value.trim()&&ri.value.trim())}
+    ni.oninput=ckIn;ri.oninput=ckIn;ni.onkeydown=function(e){if(e.key==='Enter')ri.focus()};
+    ri.onkeydown=function(e){if(e.key==='Enter'&&!be.disabled)be.click()};ckIn();
+
+    $('#bcBack').addEventListener('click',function(){cleanup();show(V.w);uB()});
+    $('#bcRecon').addEventListener('click',function(){cleanup();setTimeout(_enter,300)});
+    $('#wrBox').addEventListener('click',function(){cpTx(S.rn).then(function(){toast('Copied: '+S.rn)}).catch(function(){toast('Copy failed')})});
+    $('#btLeave').addEventListener('click',function(){if(confirm('Leave?'))leave()});
+
+    function doSend(){var t=ci.value.trim();if(!t||!S.ct||!dc)return;send(dc,{type:'message',text:t});addMsg(t,'s',S.nn);snd();ci.value='';ci.style.height='auto'}
+    bs.addEventListener('click',doSend);ci.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend()}});
+    ci.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'});
+    var tTt=null;
+    ci.addEventListener('input',function(){if(!S.ct||!dc)return;send(dc,{type:'typing',typing:true});clearTimeout(tTt);tTt=setTimeout(function(){if(dc)send(dc,{type:'typing',typing:false})},2000)});
+    $('#btSound').addEventListener('click',function(){S.snd=!S.snd;this.innerHTML=S.snd?'&#128276;':'&#128277;';toast(S.snd?'Sound ON':'Sound OFF')});
+
+    function chkURL(){var h=window.location.hash;if(!h||!h.startsWith('#room='))return;h=h.substring(1);var params={};h.split('&').forEach(function(p){var kv=p.split('=');if(kv.length===2)params[kv[0]]=decodeURIComponent(kv[1])});if(!params.room)return;ni.value=params.nick||'';ri.value=params.room;if(params.nn&&!S.nn)S.nn=params.nn;ckIn();if(!be.disabled){toast('Link detected, joining...');setTimeout(_enter,800)}}
+    chkURL();window.addEventListener('hashchange',chkURL);
+    window.addEventListener('beforeunload',function(e){if(S.ct){e.preventDefault();e.returnValue='Chatting'}});
+
+    console.log('AnonP2P v16 | Multi-sig+TURN');
+    $('#verF').textContent='AnonP2P Chat · v16';
+
+    (function pre(){if(typeof Peer!=='undefined'){sb.textContent='Ready';sb.className='badge bi';return}sb.textContent='Loading';sb.className='badge bw';var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';s.onload=function(){sb.textContent='Ready';sb.className='badge bi'};s.onerror=function(){setTimeout(pre,3000)};document.head.appendChild(s)})();
+})();
+</script>
 </body>
 </html>
