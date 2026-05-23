@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>匿名P2P聊天 | Anonymous Chat</title>
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
@@ -20,13 +21,10 @@
             --bubble-other: #2a2a45;
             --radius: 16px;
             --shadow: 0 8px 32px rgba(0,0,0,0.3);
-            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            font-family: -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
@@ -39,506 +37,274 @@
                 radial-gradient(ellipse at 50% 80%, rgba(255,92,122,0.04) 0%, transparent 50%);
             -webkit-tap-highlight-color: transparent;
             user-select: none;
-            -webkit-user-select: none;
         }
-
         .app-container {
-            width: 100%;
-            max-width: 520px;
-            height: 100vh;
-            max-height: 850px;
-            display: flex;
-            flex-direction: column;
-            background: var(--surface);
-            border-radius: 24px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            position: relative;
+            width:100%; max-width:520px; height:100vh; max-height:850px;
+            display:flex; flex-direction:column;
+            background:var(--surface); border-radius:24px;
+            box-shadow:var(--shadow); overflow:hidden; position:relative;
         }
-
-        @media (max-width: 560px) {
-            .app-container { max-width: 100%; border-radius: 0; max-height: 100vh; height: 100vh; }
-            body { align-items: stretch; }
+        @media (max-width:560px) {
+            .app-container { max-width:100%; border-radius:0; max-height:100vh; }
+            body { align-items:stretch; }
         }
-
         .app-header {
-            padding: 18px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            flex-shrink: 0;
-            background: rgba(255,255,255,0.02);
+            padding:18px 24px; display:flex; align-items:center;
+            justify-content:space-between;
+            border-bottom:1px solid rgba(255,255,255,0.06);
+            flex-shrink:0; background:rgba(255,255,255,0.02);
         }
-
         .app-title {
-            font-size: 18px;
-            font-weight: 700;
+            font-size:18px; font-weight:700;
             background: linear-gradient(135deg, var(--accent), var(--accent2));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.3px;
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
         }
-
-        .app-badge {
-            font-size: 11px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-        }
-
-        .badge-p2p { background: rgba(92,224,160,0.15); color: var(--success); }
-        .badge-connecting { background: rgba(255,193,7,0.15); color: #ffc107; animation: pulse 2s infinite; }
-        .badge-connected { background: rgba(92,224,160,0.15); color: var(--success); }
-        .badge-disconnected { background: rgba(255,92,122,0.15); color: var(--danger); }
-
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .main-content::-webkit-scrollbar { width: 4px; }
-        .main-content::-webkit-scrollbar-track { background: transparent; }
-        .main-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-
-        .view {
-            display: none;
-            flex: 1;
-            flex-direction: column;
-            padding: 24px;
-            animation: fadeSlideIn 0.35s ease;
-        }
-
-        .view.active { display: flex; }
-
-        @keyframes fadeSlideIn {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .welcome-icon {
-            text-align: center;
-            font-size: 56px;
-            margin: 30px 0 16px;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
-        .welcome-text { text-align: center; margin-bottom: 28px; }
-        .welcome-text h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.3px; }
-        .welcome-text p { font-size: 13px; color: var(--text2); line-height: 1.5; }
-
-        .input-group { margin-bottom: 20px; }
-        .input-group label {
-            display: block;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text2);
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
-
+        .app-badge { font-size:11px; padding:4px 10px; border-radius:20px; font-weight:600; }
+        .badge-p2p { background:rgba(92,224,160,0.15); color:var(--success); }
+        .badge-connected { background:rgba(92,224,160,0.15); color:var(--success); }
+        .badge-connecting { background:rgba(255,193,7,0.15); color:#ffc107; animation:pulse 2s infinite; }
+        .badge-disconnected { background:rgba(255,92,122,0.15); color:var(--danger); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .main-content { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
+        .main-content::-webkit-scrollbar { width:4px; }
+        .main-content::-webkit-scrollbar-track { background:transparent; }
+        .main-content::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:4px; }
+        .view { display:none; flex:1; flex-direction:column; padding:24px; animation:fadeIn 0.35s ease; }
+        .view.active { display:flex; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        .welcome-icon { text-align:center; font-size:56px; margin:30px 0 16px; animation:float 3s infinite; }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        .welcome-text { text-align:center; margin-bottom:28px; }
+        .welcome-text h2 { font-size:22px; font-weight:700; margin-bottom:8px; }
+        .welcome-text p { font-size:13px; color:var(--text2); line-height:1.5; }
+        .input-group { margin-bottom:20px; }
+        .input-group label { display:block; font-size:12px; font-weight:600; color:var(--text2); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.8px; }
         .input-field {
-            width: 100%;
-            padding: 13px 16px;
-            background: var(--surface2);
-            border: 2px solid transparent;
-            border-radius: var(--radius);
-            color: var(--text);
-            font-size: 15px;
-            font-family: inherit;
-            transition: var(--transition);
-            outline: none;
+            width:100%; padding:13px 16px; background:var(--surface2);
+            border:2px solid transparent; border-radius:var(--radius);
+            color:var(--text); font-size:15px; font-family:inherit;
+            transition:0.3s; outline:none;
         }
+        .input-field:focus { border-color:var(--accent); box-shadow:0 0 0 4px rgba(124,92,252,0.12); }
+        .input-field::placeholder { color:#555570; }
 
-        .input-field:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 4px rgba(124,92,252,0.12);
+        /* 大号代码输入框 */
+        .code-input {
+            text-align:center; font-size:28px !important; font-weight:700;
+            letter-spacing:6px; font-family:'SF Mono','Fira Code','Consolas',monospace !important;
+            padding:16px !important; caret-color:var(--accent);
         }
-
-        .input-field::placeholder { color: #555570; }
-
         .btn {
-            width: 100%;
-            padding: 14px 20px;
-            border: none;
-            border-radius: var(--radius);
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: var(--transition);
-            font-family: inherit;
-            letter-spacing: 0.2px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            width:100%; padding:14px 20px; border:none; border-radius:var(--radius);
+            font-size:15px; font-weight:700; cursor:pointer; transition:0.3s;
+            font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px;
         }
-
-        .btn:active { transform: scale(0.97); }
+        .btn:active { transform:scale(0.97); }
         .btn-primary {
-            background: linear-gradient(135deg, var(--accent), #6a3ff0);
-            color: #fff;
-            box-shadow: 0 4px 20px rgba(124,92,252,0.3);
+            background:linear-gradient(135deg,var(--accent),#6a3ff0);
+            color:#fff; box-shadow:0 4px 20px rgba(124,92,252,0.3);
         }
-        .btn-primary:hover { box-shadow: 0 6px 28px rgba(124,92,252,0.45); transform: translateY(-1px); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-outline { background: transparent; border: 2px solid var(--accent); color: var(--accent); }
-        .btn-outline:hover { background: rgba(124,92,252,0.08); }
-        .btn-small { width: auto; padding: 8px 16px; font-size: 13px; border-radius: 10px; }
-        .btn-ghost { background: rgba(255,255,255,0.04); color: var(--text2); border: 1px solid rgba(255,255,255,0.08); }
-        .btn-ghost:hover { background: rgba(255,255,255,0.08); }
-        .btn-danger { background: rgba(255,92,122,0.15); color: var(--danger); border: 1px solid rgba(255,92,122,0.3); }
-        .btn-danger:hover { background: rgba(255,92,122,0.25); }
-        .btn-row { display: flex; gap: 10px; }
-        .btn-row .btn { flex: 1; }
+        .btn-primary:hover { box-shadow:0 6px 28px rgba(124,92,252,0.45); transform:translateY(-1px); }
+        .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none; }
+        .btn-outline { background:transparent; border:2px solid var(--accent); color:var(--accent); }
+        .btn-outline:hover { background:rgba(124,92,252,0.08); }
+        .btn-small { width:auto; padding:8px 16px; font-size:13px; border-radius:10px; }
+        .btn-ghost { background:rgba(255,255,255,0.04); color:var(--text2); border:1px solid rgba(255,255,255,0.08); }
+        .btn-ghost:hover { background:rgba(255,255,255,0.08); }
+        .btn-danger { background:rgba(255,92,122,0.15); color:var(--danger); border:1px solid rgba(255,92,122,0.3); }
+        .btn-danger:hover { background:rgba(255,92,122,0.25); }
+        .btn-row { display:flex; gap:10px; }
+        .btn-row .btn { flex:1; }
 
-        .qr-section { text-align: center; margin: 16px 0; }
+        /* 代码展示区 */
+        .code-display {
+            text-align:center; margin:16px 0;
+        }
+        .code-box {
+            display:inline-block; background:var(--surface2);
+            padding:16px 28px; border-radius:12px;
+            font-family:'SF Mono','Fira Code','Consolas',monospace;
+            font-size:30px; font-weight:700; color:var(--accent2);
+            letter-spacing:6px; border:2px dashed rgba(92,224,214,0.3);
+            cursor:pointer; transition:0.3s;
+        }
+        .code-box:hover { border-color:var(--accent2); background:rgba(92,224,214,0.05); }
+        .code-box:active { transform:scale(0.96); }
+        .code-hint { font-size:12px; color:var(--text2); margin-top:8px; }
+
+        .qr-section { text-align:center; margin:16px 0; }
         .qr-container {
-            display: inline-block;
-            background: #fff;
-            padding: 16px;
-            border-radius: 16px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            display:inline-block; background:#fff; padding:16px;
+            border-radius:16px; box-shadow:0 4px 16px rgba(0,0,0,0.2);
         }
-        .qr-container canvas, .qr-container img {
-            display: block;
-            width: 200px !important;
-            height: 200px !important;
-            border-radius: 4px;
-        }
-        .qr-label { margin-top: 10px; font-size: 12px; color: var(--text2); }
-
-        .connection-code-display {
-            display: inline-block;
-            background: var(--surface2);
-            padding: 10px 18px;
-            border-radius: 10px;
-            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--accent2);
-            letter-spacing: 1.5px;
-            margin: 8px 0;
-        }
-
-        .copy-hint { font-size: 11px; color: var(--text2); margin-top: 4px; opacity: 0; transition: opacity 0.3s; }
-        .copy-hint.show { opacity: 1; }
-
-        .chat-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 14px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            flex-shrink: 0;
-        }
-
-        .chat-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent2), var(--accent));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-
-        .chat-partner-info { flex: 1; min-width: 0; }
-        .chat-partner-name { font-weight: 700; font-size: 15px; }
-        .chat-partner-status { font-size: 11px; color: var(--text2); }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .chat-messages::-webkit-scrollbar { width: 4px; }
-        .chat-messages::-webkit-scrollbar-track { background: transparent; }
-        .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
-
-        .msg-row { display: flex; flex-direction: column; max-width: 78%; animation: msgIn 0.25s ease; }
-        .msg-row.self { align-self: flex-end; align-items: flex-end; }
-        .msg-row.other { align-self: flex-start; align-items: flex-start; }
-
-        @keyframes msgIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .msg-bubble { padding: 10px 15px; border-radius: 18px; font-size: 14px; line-height: 1.45; word-break: break-word; position: relative; }
-        .msg-row.self .msg-bubble { background: var(--bubble-self); color: #fff; border-bottom-right-radius: 6px; }
-        .msg-row.other .msg-bubble { background: var(--bubble-other); color: var(--text); border-bottom-left-radius: 6px; }
-        .msg-nickname { font-size: 10px; color: var(--text2); margin-bottom: 3px; padding: 0 4px; font-weight: 600; }
-        .msg-time { font-size: 10px; color: var(--text2); margin-top: 3px; padding: 0 4px; }
-        .msg-system { align-self: center; font-size: 11px; color: var(--text2); padding: 4px 12px; background: rgba(255,255,255,0.03); border-radius: 20px; margin: 4px 0; }
-        .typing-indicator { font-size: 11px; color: var(--accent2); padding: 4px 12px; align-self: flex-start; animation: pulse 1.5s infinite; }
-
-        .chat-input-area {
-            padding: 14px 20px;
-            border-top: 1px solid rgba(255,255,255,0.06);
-            display: flex;
-            gap: 10px;
-            align-items: flex-end;
-            flex-shrink: 0;
-        }
-
-        .chat-textarea {
-            flex: 1;
-            resize: none;
-            background: var(--surface2);
-            border: 2px solid transparent;
-            border-radius: 20px;
-            padding: 10px 16px;
-            color: var(--text);
-            font-size: 14px;
-            font-family: inherit;
-            outline: none;
-            max-height: 100px;
-            min-height: 42px;
-            line-height: 1.4;
-            transition: var(--transition);
-        }
-
-        .chat-textarea:focus { border-color: var(--accent); }
-
-        .send-btn {
-            width: 42px;
-            height: 42px;
-            min-width: 42px;
-            border-radius: 50%;
-            border: none;
-            background: linear-gradient(135deg, var(--accent), #6a3ff0);
-            color: #fff;
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition);
-            flex-shrink: 0;
-        }
-
-        .send-btn:hover { transform: scale(1.05); box-shadow: 0 4px 16px rgba(124,92,252,0.4); }
-        .send-btn:active { transform: scale(0.92); }
-        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-        .step-indicator { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
-        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--surface2); transition: var(--transition); }
-        .step-dot.active { background: var(--accent); box-shadow: 0 0 12px rgba(124,92,252,0.5); }
-        .step-dot.done { background: var(--success); }
-
-        .step-text {
-            text-align: center;
-            font-size: 12px;
-            color: var(--text2);
-            margin-bottom: 16px;
-            min-height: 32px;
-            line-height: 1.4;
-        }
+        .qr-container canvas, .qr-container img { display:block; width:180px !important; height:180px !important; border-radius:4px; }
+        .qr-label { margin-top:10px; font-size:12px; color:var(--text2); }
 
         .info-card {
-            background: var(--surface2);
-            border-radius: var(--radius);
-            padding: 16px;
-            margin: 12px 0;
-            font-size: 12px;
-            color: var(--text2);
-            line-height: 1.6;
-            border-left: 3px solid var(--accent2);
+            background:var(--surface2); border-radius:var(--radius);
+            padding:16px; margin:12px 0; font-size:12px;
+            color:var(--text2); line-height:1.6;
+            border-left:3px solid var(--accent2);
         }
 
-        .small-divider {
-            text-align: center;
-            color: var(--text2);
-            font-size: 11px;
-            margin: 16px 0;
-            position: relative;
+        .divider {
+            text-align:center; color:var(--text2); font-size:11px;
+            margin:16px 0; position:relative;
         }
-        .small-divider::before, .small-divider::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 30%;
-            height: 1px;
-            background: rgba(255,255,255,0.08);
+        .divider::before,.divider::after {
+            content:''; position:absolute; top:50%; width:30%;
+            height:1px; background:rgba(255,255,255,0.08);
         }
-        .small-divider::before { left: 0; }
-        .small-divider::after { right: 0; }
+        .divider::before { left:0; } .divider::after { right:0; }
 
         .toast {
-            position: fixed;
-            top: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-120px);
-            background: var(--surface2);
-            color: var(--text);
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-            z-index: 100;
-            transition: transform 0.3s ease;
-            pointer-events: none;
+            position:fixed; top:24px; left:50%;
+            transform:translateX(-50%) translateY(-120px);
+            background:var(--surface2); color:var(--text);
+            padding:10px 20px; border-radius:20px;
+            font-size:13px; font-weight:600;
+            box-shadow:0 8px 24px rgba(0,0,0,0.4);
+            z-index:100; transition:transform 0.3s; pointer-events:none;
         }
-        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.show { transform:translateX(-50%) translateY(0); }
 
+        /* Chat UI */
+        .chat-header {
+            display:flex; align-items:center; gap:10px;
+            padding:14px 20px; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0;
+        }
+        .chat-avatar {
+            width:40px; height:40px; border-radius:50%;
+            background:linear-gradient(135deg,var(--accent2),var(--accent));
+            display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;
+        }
+        .chat-partner-info { flex:1; min-width:0; }
+        .chat-partner-name { font-weight:700; font-size:15px; }
+        .chat-partner-status { font-size:11px; color:var(--text2); }
+        .chat-messages {
+            flex:1; overflow-y:auto; padding:16px 20px;
+            display:flex; flex-direction:column; gap:6px;
+        }
+        .chat-messages::-webkit-scrollbar { width:4px; }
+        .chat-messages::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:4px; }
+        .msg-row { display:flex; flex-direction:column; max-width:78%; animation:msgIn 0.25s ease; }
+        .msg-row.self { align-self:flex-end; align-items:flex-end; }
+        .msg-row.other { align-self:flex-start; align-items:flex-start; }
+        @keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .msg-bubble { padding:10px 15px; border-radius:18px; font-size:14px; line-height:1.45; word-break:break-word; }
+        .msg-row.self .msg-bubble { background:var(--bubble-self); color:#fff; border-bottom-right-radius:6px; }
+        .msg-row.other .msg-bubble { background:var(--bubble-other); color:var(--text); border-bottom-left-radius:6px; }
+        .msg-nickname { font-size:10px; color:var(--text2); margin-bottom:3px; padding:0 4px; font-weight:600; }
+        .msg-time { font-size:10px; color:var(--text2); margin-top:3px; padding:0 4px; }
+        .msg-system { align-self:center; font-size:11px; color:var(--text2); padding:4px 12px; background:rgba(255,255,255,0.03); border-radius:20px; margin:4px 0; }
+        .typing-indicator { font-size:11px; color:var(--accent2); padding:4px 12px; align-self:flex-start; animation:pulse 1.5s infinite; }
+        .chat-input-area {
+            padding:14px 20px; border-top:1px solid rgba(255,255,255,0.06);
+            display:flex; gap:10px; align-items:flex-end; flex-shrink:0;
+        }
+        .chat-textarea {
+            flex:1; resize:none; background:var(--surface2);
+            border:2px solid transparent; border-radius:20px;
+            padding:10px 16px; color:var(--text); font-size:14px;
+            font-family:inherit; outline:none; max-height:100px; min-height:42px;
+            line-height:1.4; transition:0.3s;
+        }
+        .chat-textarea:focus { border-color:var(--accent); }
+        .send-btn {
+            width:42px; height:42px; min-width:42px; border-radius:50%;
+            border:none; background:linear-gradient(135deg,var(--accent),#6a3ff0);
+            color:#fff; font-size:20px; cursor:pointer; transition:0.3s; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .send-btn:hover { transform:scale(1.05); box-shadow:0 4px 16px rgba(124,92,252,0.4); }
+        .send-btn:active { transform:scale(0.92); }
+        .send-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
         .empty-state {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--text2);
-            text-align: center;
-            padding: 40px 20px;
+            flex:1; display:flex; flex-direction:column;
+            align-items:center; justify-content:center;
+            color:var(--text2); text-align:center; padding:40px 20px;
         }
-        .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.6; }
-        .empty-state p { font-size: 13px; line-height: 1.5; }
-
-        .notif-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--accent2);
-            display: inline-block;
-            margin-right: 6px;
-            box-shadow: 0 0 8px rgba(92,224,214,0.5);
-        }
-
-        .sound-toggle {
-            background: none;
-            border: none;
-            color: var(--text2);
-            font-size: 18px;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 8px;
-            transition: var(--transition);
-        }
-        .sound-toggle:hover { background: rgba(255,255,255,0.05); }
-
-        @media (max-width: 400px) {
-            .view { padding: 16px; }
-            .chat-messages { padding: 12px; }
-            .msg-row { max-width: 85%; }
-            .qr-container canvas, .qr-container img { width: 160px !important; height: 160px !important; }
-            .qr-container { padding: 12px; border-radius: 12px; }
+        .empty-state .icon { font-size:48px; margin-bottom:16px; opacity:0.6; }
+        .empty-state p { font-size:13px; line-height:1.5; }
+        .notif-dot { width:8px; height:8px; border-radius:50%; background:var(--accent2); display:inline-block; margin-right:6px; box-shadow:0 0 8px rgba(92,224,214,0.5); }
+        .sound-toggle { background:none; border:none; color:var(--text2); font-size:18px; cursor:pointer; padding:4px 8px; border-radius:8px; transition:0.3s; }
+        .sound-toggle:hover { background:rgba(255,255,255,0.05); }
+        @media (max-width:400px) {
+            .view { padding:16px; }
+            .chat-messages { padding:12px; }
+            .msg-row { max-width:85%; }
+            .code-box { font-size:24px; padding:12px 20px; letter-spacing:4px; }
+            .qr-container canvas, .qr-container img { width:150px !important; height:150px !important; }
         }
     </style>
 </head>
 <body>
-    <div class="app-container" id="appContainer">
+    <div class="app-container">
         <div class="app-header">
             <span class="app-title">🔒 匿名P2P聊天</span>
             <span class="app-badge badge-p2p" id="statusBadge">P2P加密</span>
         </div>
         <div class="main-content">
-            <!-- Welcome View -->
+            <!-- Welcome -->
             <div class="view active" id="viewWelcome">
                 <div class="welcome-icon">💬</div>
                 <div class="welcome-text">
                     <h2>匿名 · 加密 · 直连</h2>
-                    <p>真正的点对点加密聊天<br>无服务器中转 · 无消息存储 · 无需注册</p>
+                    <p>输入昵称，获取12位配对码<br>对方输入相同配对码即可聊天</p>
                 </div>
                 <div class="info-card">
-                    <span>🛡️</span> 你的聊天内容通过 <strong>WebRTC P2P</strong> 技术直接在浏览器之间传输，不经过任何第三方服务器。关闭页面后所有消息将自动消失。
+                    🛡️ 聊天内容通过 <strong>WebRTC P2P</strong> 加密直连传输，不经过任何服务器中转或存储。关闭页面后所有消息自动消失。
                 </div>
-                <div class="input-group" style="margin-top: 20px;">
+                <div class="input-group" style="margin-top:20px;">
                     <label>你的昵称</label>
-                    <input type="text" class="input-field" id="inputNickname" placeholder="输入你想显示的昵称..." maxlength="20" autocomplete="off">
+                    <input type="text" class="input-field" id="inputNickname" placeholder="输入昵称..." maxlength="20" autocomplete="off">
                 </div>
-                <button class="btn btn-primary" id="btnEnter" disabled>✨ 开始聊天</button>
+                <button class="btn btn-primary" id="btnStart" disabled>✨ 开始</button>
             </div>
 
-            <!-- Connect View -->
+            <!-- Connect -->
             <div class="view" id="viewConnect">
-                <div class="step-indicator" id="stepIndicator">
-                    <span class="step-dot active" id="step1"></span>
-                    <span class="step-dot" id="step2"></span>
-                    <span class="step-dot" id="step3"></span>
+                <div class="welcome-text" style="margin-bottom:20px;">
+                    <h2 id="connectTitle">选择方式</h2>
+                    <p id="connectDesc">创建房间获取配对码，或输入已有的配对码加入</p>
                 </div>
-                <div class="step-text" id="stepText">步骤 1/3：创建或加入房间</div>
-
-                <div class="btn-row" style="margin-bottom: 20px;" id="tabRow">
-                    <button class="btn btn-primary" id="btnCreateTab">📤 创建房间</button>
-                    <button class="btn btn-outline" id="btnJoinTab">📥 加入房间</button>
+                <div class="btn-row" style="margin-bottom:16px;">
+                    <button class="btn btn-primary" id="btnCreate">📤 创建房间</button>
+                    <button class="btn btn-outline" id="btnJoin">📥 加入房间</button>
                 </div>
 
-                <!-- CREATE panel -->
+                <!-- 创建房间面板 -->
                 <div id="panelCreate">
-                    <p style="font-size:13px;color:var(--text2);margin-bottom:12px;text-align:center;">创建连接邀请，通过二维码或链接分享给对方</p>
-                    <button class="btn btn-primary" id="btnCreateRoom">🔗 生成连接邀请</button>
-                    <div id="qrCreateContainer" style="display:none;">
+                    <button class="btn btn-primary" id="btnGenCode">🎲 生成配对码</button>
+                    <div id="createResult" style="display:none;">
+                        <div class="code-display">
+                            <div class="code-box" id="codeBox" title="点击复制">--------</div>
+                            <div class="code-hint">👆 点击数字复制配对码</div>
+                        </div>
                         <div class="qr-section">
                             <div class="qr-container" id="qrCreate"></div>
-                            <div class="qr-label">📱 让对方扫描此二维码</div>
+                            <div class="qr-label">📱 让对方扫码获取配对码</div>
                         </div>
-                        <div style="text-align:center;margin-top:4px;">
-                            <span class="connection-code-display" style="font-size:12px;word-break:break-all;" id="codeDisplayCreate">-</span>
+                        <div class="info-card" style="text-align:center;">
+                            ⏳ 等待对方输入配对码加入...
                         </div>
-                        <button class="btn btn-ghost btn-small" id="btnCopyCreate" style="margin:8px auto;display:block;">📋 复制链接</button>
-                        <span class="copy-hint" id="copyHintCreate">✓ 已复制到剪贴板</span>
                     </div>
-                    <div class="small-divider">— 或 —</div>
                 </div>
 
-                <!-- JOIN panel -->
+                <!-- 加入房间面板 -->
                 <div id="panelJoin" style="display:none;">
-                    <p style="font-size:13px;color:var(--text2);margin-bottom:12px;text-align:center;">粘贴对方分享的连接信息来加入房间</p>
                     <div class="input-group">
-                        <label>粘贴连接信息</label>
-                        <textarea class="input-field" id="inputJoinCode" rows="3" placeholder="在此粘贴对方发送的连接代码或完整链接..." style="resize:vertical;font-size:12px;font-family:monospace;"></textarea>
+                        <label>输入配对码</label>
+                        <input type="text" class="input-field code-input" id="inputCode" placeholder="0000 0000 0000" maxlength="12" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
                     </div>
-                    <button class="btn btn-primary" id="btnJoinRoom">🔓 解析并连接</button>
-                    <div id="joinError" style="color:var(--danger);font-size:12px;margin-top:8px;text-align:center;display:none;"></div>
-
-                    <div id="joinResponseSection" style="display:none;margin-top:20px;">
-                        <div class="info-card" style="border-left-color:var(--accent);">
-                            <span>🔄</span> <strong>请将下方二维码或链接发送回给对方</strong>，以完成双向连接。
-                        </div>
-                        <div class="qr-section">
-                            <div class="qr-container" id="qrJoinResponse"></div>
-                            <div class="qr-label">📱 让对方扫描此二维码完成连接</div>
-                        </div>
-                        <button class="btn btn-ghost btn-small" id="btnCopyJoinResponse" style="margin:8px auto;display:block;">📋 复制回复链接</button>
-                        <span class="copy-hint" id="copyHintJoin">✓ 已复制到剪贴板</span>
-                    </div>
+                    <button class="btn btn-primary" id="btnConnectCode" disabled>🔗 连接</button>
+                    <div id="joinStatus" style="text-align:center;margin-top:12px;font-size:13px;color:var(--text2);display:none;"></div>
                 </div>
 
-                <!-- RECEIVE RESPONSE panel -->
-                <div id="panelReceiveResponse" style="display:none;">
-                    <div class="info-card">
-                        <span>🔄</span> 对方已收到你的邀请。请在此处<strong>粘贴对方回复的连接信息</strong>以完成P2P连接。
-                    </div>
-                    <div class="input-group">
-                        <label>粘贴对方的回复信息</label>
-                        <textarea class="input-field" id="inputResponseCode" rows="3" placeholder="在此粘贴对方的回复代码或链接..." style="resize:vertical;font-size:12px;font-family:monospace;"></textarea>
-                    </div>
-                    <button class="btn btn-primary" id="btnApplyResponse">🔗 完成连接</button>
-                    <div id="responseError" style="color:var(--danger);font-size:12px;margin-top:8px;text-align:center;display:none;"></div>
-                </div>
-
-                <button class="btn btn-ghost btn-small" id="btnBackToWelcome" style="margin-top:auto;">← 返回修改昵称</button>
+                <button class="btn btn-ghost btn-small" id="btnBack" style="margin-top:auto;">← 返回</button>
             </div>
 
-            <!-- Chat View -->
+            <!-- Chat -->
             <div class="view" id="viewChat">
                 <div class="chat-header">
                     <div class="chat-avatar" id="partnerAvatar">👤</div>
@@ -566,223 +332,203 @@
 
     <script>
     (function(){
+        var $ = function(s){ return document.querySelector(s); };
+        var viewWelcome = $('#viewWelcome'), viewConnect = $('#viewConnect'), viewChat = $('#viewChat');
+        var statusBadge = $('#statusBadge'), chatMessages = $('#chatMessages');
+        var chatInput = $('#chatInput'), btnSend = $('#btnSend'), toast = $('#toast');
+
         var state = {
-            nickname:'', partnerNickname:'', mode:null,
-            peerConnection:null, dataChannel:null,
-            localOffer:null, localAnswer:null,
-            connected:false, step:1, soundEnabled:true
+            nickname: '', partnerNickname: '', roomCode: '',
+            peer: null, conn: null, connected: false,
+            soundEnabled: true, mode: null
         };
 
-        var $ = function(s){ return document.querySelector(s); };
-        var $$ = function(s){ return document.querySelectorAll(s); };
-
-        var viewWelcome = $('#viewWelcome');
-        var viewConnect = $('#viewConnect');
-        var viewChat = $('#viewChat');
-        var statusBadge = $('#statusBadge');
-        var chatMessages = $('#chatMessages');
-        var chatInput = $('#chatInput');
-        var btnSend = $('#btnSend');
-        var toast = $('#toast');
-
-        function showView(view){
-            [viewWelcome, viewConnect, viewChat].forEach(function(v){ v.classList.remove('active'); });
-            view.classList.add('active');
-            if(view === viewChat){
-                setTimeout(function(){ chatMessages.scrollTop = chatMessages.scrollHeight; chatInput.focus(); }, 100);
-            }
+        function showView(v) {
+            [viewWelcome, viewConnect, viewChat].forEach(function(x){ x.classList.remove('active'); });
+            v.classList.add('active');
+            if (v === viewChat) setTimeout(function(){ chatMessages.scrollTop = chatMessages.scrollHeight; chatInput.focus(); }, 100);
         }
 
-        function showToast(msg, duration){
-            duration = duration || 2000;
-            toast.textContent = msg;
-            toast.classList.add('show');
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(function(){ toast.classList.remove('show'); }, duration);
+        function showToast(msg, dur) {
+            dur = dur || 2000;
+            toast.textContent = msg; toast.classList.add('show');
+            clearTimeout(toast._tid);
+            toast._tid = setTimeout(function(){ toast.classList.remove('show'); }, dur);
         }
 
-        function copyToClipboard(text){
-            if(navigator.clipboard) return navigator.clipboard.writeText(text);
+        async function copyToClipboard(text) {
+            if (navigator.clipboard) return navigator.clipboard.writeText(text);
             var ta = document.createElement('textarea');
-            ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+            ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;';
             document.body.appendChild(ta); ta.select();
             document.execCommand('copy'); document.body.removeChild(ta);
             return Promise.resolve();
         }
 
-        function playSound(){
-            if(!state.soundEnabled) return;
+        function playSound() {
+            if (!state.soundEnabled) return;
             try {
                 var ctx = new (window.AudioContext||window.webkitAudioContext)();
-                var osc = ctx.createOscillator();
-                var gain = ctx.createGain();
-                osc.connect(gain); gain.connect(ctx.destination);
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(800, ctx.currentTime);
-                osc.frequency.setValueAtTime(1000, ctx.currentTime+0.08);
-                gain.gain.setValueAtTime(0.15, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.2);
-                osc.start(ctx.currentTime); osc.stop(ctx.currentTime+0.2);
-            } catch(e){}
+                var o = ctx.createOscillator(), g = ctx.createGain();
+                o.connect(g); g.connect(ctx.destination);
+                o.type = 'sine';
+                o.frequency.setValueAtTime(800, ctx.currentTime);
+                o.frequency.setValueAtTime(1000, ctx.currentTime+0.08);
+                g.gain.setValueAtTime(0.15, ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.2);
+                o.start(ctx.currentTime); o.stop(ctx.currentTime+0.2);
+            } catch(e) {}
         }
 
-        function getTimeStr(){
+        function getTimeStr() {
             var d = new Date();
             return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
         }
 
-        function randomEmoji(){
+        function randomEmoji() {
             var e = ['🐱','🐶','🦊','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦄','🐌','🐛','🦋','🐞','🌟','⭐','🌈','❄️','🔥','💧','🍀','🌸','🌺','🍄'];
             return e[Math.floor(Math.random()*e.length)];
         }
 
-        var rtcConfig = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { urls: 'stun:stun3.l.google.com:19302' },
-                { urls: 'stun:stun4.l.google.com:19302' }
-            ],
-            iceCandidatePoolSize: 2
-        };
-
-        function encodeSDP(sdp){
-            return btoa(unescape(encodeURIComponent(sdp)))
-                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        }
-        function decodeSDP(enc){
-            enc = enc.replace(/-/g, '+').replace(/_/g, '/');
-            while(enc.length % 4) enc += '=';
-            return decodeURIComponent(escape(atob(enc)));
+        function genRoomCode() {
+            var code = '';
+            for (var i = 0; i < 12; i++) code += Math.floor(Math.random() * 10);
+            return code;
         }
 
-        function buildConnectionURL(sdpB64, type){
-            return window.location.origin + window.location.pathname + '#connect=' + type + '&sdp=' + encodeURIComponent(sdpB64) + '&nick=' + encodeURIComponent(state.nickname);
+        function formatCode(code) {
+            return code.substring(0,4)+' '+code.substring(4,8)+' '+code.substring(8,12);
         }
 
-        function parseConnectionURL(urlOrCode){
-            var str = urlOrCode.trim();
-            var hashIdx = str.indexOf('#connect=');
-            if(hashIdx >= 0) str = str.substring(hashIdx);
-            if(!str.startsWith('#connect=')) return null;
-            str = str.substring('#connect='.length);
-            var parts = {};
-            str.split('&').forEach(function(pair){
-                var kv = pair.split('=');
-                var key = kv[0];
-                var val = kv.slice(1).join('=');
-                try { val = decodeURIComponent(val); } catch(e){}
-                parts[key] = val;
+        // ===== PeerJS Logic =====
+
+        function initPeer(id) {
+            if (state.peer) state.peer.destroy();
+            state.peer = new Peer(id, {
+                debug: 0
             });
-            return parts;
-        }
 
-        async function createPeerConnection(){
-            if(state.peerConnection) state.peerConnection.close();
-            var pc = new RTCPeerConnection(rtcConfig);
-            state.peerConnection = pc;
+            state.peer.on('open', function(pid) {
+                if (state.mode === 'create') {
+                    state.roomCode = pid;
+                    showCreateResult();
+                }
+            });
 
-            pc.onicecandidate = function(event){};
+            state.peer.on('connection', function(conn) {
+                // Creator: someone joined
+                setupConnection(conn);
+            });
 
-            pc.onicegatheringstatechange = function(){
-                if(pc.iceGatheringState === 'complete') onICEGatheringComplete();
-            };
-
-            pc.oniceconnectionstatechange = function(){
-                var iceState = pc.iceConnectionState;
-                if(iceState === 'connected' || iceState === 'completed') onConnected();
-                else if(iceState === 'disconnected' || iceState === 'failed' || iceState === 'closed') onDisconnected();
+            state.peer.on('error', function(err) {
+                console.error('Peer error:', err);
+                if (state.mode === 'join') {
+                    $('#joinStatus').style.display = 'block';
+                    $('#joinStatus').textContent = '❌ 连接失败，请检查配对码是否正确';
+                    $('#btnConnectCode').disabled = false;
+                    $('#btnConnectCode').textContent = '🔗 连接';
+                    $('#inputCode').disabled = false;
+                }
+                if (err.type === 'unavailable-id') {
+                    showToast('该配对码已被占用，请重新生成');
+                }
                 updateStatusBadge();
-            };
+            });
 
-            pc.ondatachannel = function(event){ setupDataChannel(event.channel); };
-            return pc;
+            state.peer.on('disconnected', function() {
+                updateStatusBadge();
+            });
         }
 
-        function setupDataChannel(channel){
-            state.dataChannel = channel;
-            channel.onopen = function(){
+        function connectToPeer(remoteId) {
+            var conn = state.peer.connect(remoteId, {
+                reliable: true
+            });
+            setupConnection(conn);
+        }
+
+        function setupConnection(conn) {
+            state.conn = conn;
+
+            conn.on('open', function() {
                 state.connected = true;
                 updateStatusBadge();
                 updateChatUI();
-                var nickMsg = JSON.stringify({ type: 'nickname', nick: state.nickname });
-                channel.send(nickMsg);
-            };
-            channel.onclose = function(){ state.connected = false; updateStatusBadge(); };
-            channel.onmessage = function(event){ handleIncomingMessage(event.data); };
+                // Send nickname
+                try { conn.send(JSON.stringify({ type:'nickname', nick:state.nickname })); } catch(e) {}
+                // Hide connect view, show chat
+                if (state.mode === 'join') {
+                    $('#joinStatus').style.display = 'none';
+                }
+                showView(viewChat);
+                showToast('✅ P2P加密通道已建立');
+            });
+
+            conn.on('data', function(data) {
+                handleMessage(data);
+            });
+
+            conn.on('close', function() {
+                state.connected = false;
+                updateStatusBadge();
+                addSystemMessage('⚠️ 连接已断开');
+            });
+
+            conn.on('error', function() {
+                state.connected = false;
+                updateStatusBadge();
+            });
         }
 
-        function handleIncomingMessage(raw){
+        function handleMessage(raw) {
             try {
-                var msg = JSON.parse(raw);
-                if(msg.type === 'nickname'){
+                var msg = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+                if (msg.type === 'nickname') {
                     state.partnerNickname = msg.nick;
                     updateChatUI();
                     addSystemMessage(msg.nick + ' 加入了聊天');
-                } else if(msg.type === 'message'){
+                } else if (msg.type === 'message') {
                     addChatMessage(msg.text, 'other', state.partnerNickname || '对方');
                     playSound();
-                } else if(msg.type === 'typing'){
+                } else if (msg.type === 'typing') {
                     showTypingIndicator(msg.typing);
                 }
-            } catch(e){
-                addChatMessage(raw, 'other', state.partnerNickname || '对方');
+            } catch(e) {
+                addChatMessage(String(raw), 'other', state.partnerNickname || '对方');
                 playSound();
             }
         }
 
-        function sendChatMessage(text){
-            if(!state.dataChannel || state.dataChannel.readyState !== 'open') return;
-            var msg = JSON.stringify({ type: 'message', text: text });
-            state.dataChannel.send(msg);
-            addChatMessage(text, 'self', state.nickname);
-            playSound();
+        function sendChatMessage(text) {
+            if (!state.conn || !state.connected) return;
+            try {
+                state.conn.send(JSON.stringify({ type:'message', text:text }));
+                addChatMessage(text, 'self', state.nickname);
+                playSound();
+            } catch(e) {}
         }
 
-        function sendTypingIndicator(typing){
-            if(!state.dataChannel || state.dataChannel.readyState !== 'open') return;
-            try { state.dataChannel.send(JSON.stringify({ type: 'typing', typing: typing })); } catch(e){}
+        function sendTypingIndicator(typing) {
+            if (!state.conn || !state.connected) return;
+            try { state.conn.send(JSON.stringify({ type:'typing', typing:typing })); } catch(e) {}
         }
 
-        function onICEGatheringComplete(){
-            if(state.mode === 'create' && state.peerConnection && state.peerConnection.localDescription){
-                state.localOffer = state.peerConnection.localDescription.sdp;
-                showCreateQR();
-            } else if(state.mode === 'join' && state.peerConnection && state.peerConnection.localDescription){
-                state.localAnswer = state.peerConnection.localDescription.sdp;
-                showJoinResponse();
-            }
-        }
+        // ===== UI Updates =====
 
-        function onConnected(){
-            if(!state.connected && state.dataChannel && state.dataChannel.readyState === 'open') state.connected = true;
-            updateStatusBadge(); updateChatUI();
-        }
-
-        function onDisconnected(){
-            state.connected = false;
-            updateStatusBadge();
-            addSystemMessage('⚠️ 连接已断开');
-        }
-
-        function updateStatusBadge(){
-            if(state.connected){
+        function updateStatusBadge() {
+            if (state.connected) {
                 statusBadge.textContent = '🟢 已连接';
                 statusBadge.className = 'app-badge badge-connected';
-            } else if(state.peerConnection && (state.peerConnection.iceConnectionState==='checking'||state.peerConnection.iceConnectionState==='new')){
-                statusBadge.textContent = '🟡 连接中';
+            } else if (state.peer && !state.peer.destroyed && !state.peer.disconnected) {
+                statusBadge.textContent = '🟡 等待中';
                 statusBadge.className = 'app-badge badge-connecting';
-            } else if(state.peerConnection && (state.peerConnection.iceConnectionState==='disconnected'||state.peerConnection.iceConnectionState==='failed')){
-                statusBadge.textContent = '🔴 已断开';
-                statusBadge.className = 'app-badge badge-disconnected';
             } else {
                 statusBadge.textContent = '🔒 P2P加密';
                 statusBadge.className = 'app-badge badge-p2p';
             }
         }
 
-        function updateChatUI(){
+        function updateChatUI() {
             var name = state.partnerNickname || '对方';
             $('#partnerName').textContent = name;
             $('#partnerAvatar').textContent = randomEmoji();
@@ -790,416 +536,288 @@
             btnSend.disabled = !state.connected;
         }
 
-        function addChatMessage(text, type, nickname){
+        function addChatMessage(text, type, nickname) {
             var row = document.createElement('div');
             row.className = 'msg-row ' + type;
-
-            if(type === 'other'){
-                var nameSpan = document.createElement('span');
-                nameSpan.className = 'msg-nickname';
-                nameSpan.textContent = nickname || '对方';
-                row.appendChild(nameSpan);
+            if (type === 'other') {
+                var ns = document.createElement('span');
+                ns.className = 'msg-nickname'; ns.textContent = nickname || '对方';
+                row.appendChild(ns);
             }
+            var b = document.createElement('div');
+            b.className = 'msg-bubble'; b.textContent = text;
+            row.appendChild(b);
+            var t = document.createElement('span');
+            t.className = 'msg-time'; t.textContent = getTimeStr();
+            row.appendChild(t);
 
-            var bubble = document.createElement('div');
-            bubble.className = 'msg-bubble';
-            bubble.textContent = text;
-            row.appendChild(bubble);
-
-            var time = document.createElement('span');
-            time.className = 'msg-time';
-            time.textContent = getTimeStr();
-            row.appendChild(time);
-
-            var emptyState = chatMessages.querySelector('.empty-state');
-            if(emptyState) emptyState.remove();
-
-            var typingEl = chatMessages.querySelector('.typing-indicator');
-            if(typingEl) typingEl.remove();
+            var em = chatMessages.querySelector('.empty-state');
+            if (em) em.remove();
+            var ti = chatMessages.querySelector('.typing-indicator');
+            if (ti) ti.remove();
 
             chatMessages.appendChild(row);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        function addSystemMessage(text){
-            var div = document.createElement('div');
-            div.className = 'msg-system';
-            div.textContent = text;
-            chatMessages.appendChild(div);
+        function addSystemMessage(text) {
+            var d = document.createElement('div');
+            d.className = 'msg-system'; d.textContent = text;
+            chatMessages.appendChild(d);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
         var typingTimeout = null;
-        function showTypingIndicator(isTyping){
+        function showTypingIndicator(isTyping) {
             var existing = chatMessages.querySelector('.typing-indicator');
-            if(isTyping){
-                if(!existing){
-                    var div = document.createElement('div');
-                    div.className = 'typing-indicator';
-                    div.textContent = '对方正在输入...';
-                    chatMessages.appendChild(div);
+            if (isTyping) {
+                if (!existing) {
+                    var d = document.createElement('div');
+                    d.className = 'typing-indicator'; d.textContent = '对方正在输入...';
+                    chatMessages.appendChild(d);
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                 }
                 clearTimeout(typingTimeout);
-                typingTimeout = setTimeout(function(){
+                typingTimeout = setTimeout(function() {
                     var el = chatMessages.querySelector('.typing-indicator');
-                    if(el) el.remove();
+                    if (el) el.remove();
                 }, 3000);
             } else {
-                if(existing) existing.remove();
+                if (existing) existing.remove();
             }
         }
 
-        function clearChat(){ chatMessages.innerHTML = ''; }
+        function clearChat() { chatMessages.innerHTML = ''; }
 
-        async function createRoom(){
-            state.mode = 'create'; state.step = 1; updateStepUI();
-            var pc = await createPeerConnection();
-            var channel = pc.createDataChannel('chat', { ordered: true });
-            setupDataChannel(channel);
-            var offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            if(pc.iceGatheringState === 'complete') onICEGatheringComplete();
-            setTimeout(function(){
-                if(!state.localOffer && pc.localDescription && pc.iceGatheringState !== 'complete'){
-                    state.localOffer = pc.localDescription.sdp;
-                    showCreateQR();
-                }
-            }, 5000);
-        }
-
-        function showCreateQR(){
-            state.step = 2; updateStepUI();
-            $('#stepText').textContent = '步骤 2/3：将二维码/链接发送给对方';
-
-            var sdpB64 = encodeSDP(state.localOffer);
-            var url = buildConnectionURL(sdpB64, 'offer');
-            var codeDisplay = sdpB64.substring(0, 40) + '...';
-
-            $('#codeDisplayCreate').textContent = codeDisplay;
-            $('#qrCreateContainer').style.display = 'block';
-            $('#btnCreateRoom').style.display = 'none';
-            $('#panelReceiveResponse').style.display = 'block';
-            $('#tabRow').style.display = 'none';
+        function showCreateResult() {
+            $('#createResult').style.display = 'block';
+            $('#btnGenCode').style.display = 'none';
+            $('#connectTitle').textContent = '你的配对码';
+            $('#connectDesc').textContent = '将以下配对码或二维码分享给对方';
             $('#panelJoin').style.display = 'none';
-            $('#panelCreate').style.display = 'block';
+            $('#btnCreate').style.display = 'none';
+            $('#btnJoin').style.display = 'none';
 
-            var qrContainer = $('#qrCreate');
-            qrContainer.innerHTML = '';
+            $('#codeBox').textContent = formatCode(state.roomCode);
+
+            var qrC = $('#qrCreate');
+            qrC.innerHTML = '';
+            var shareUrl = window.location.origin + window.location.pathname + '#code=' + state.roomCode;
             try {
-                new QRCode(qrContainer, {
-                    text: url, width: 200, height: 200,
+                new QRCode(qrC, {
+                    text: shareUrl,
+                    width: 180, height: 180,
                     colorDark: '#1a1a2e', colorLight: '#ffffff',
                     correctLevel: QRCode.CorrectLevel.M
                 });
-            } catch(e){
-                qrContainer.innerHTML = '<div style="padding:20px;color:#666;font-size:13px;">二维码生成失败<br>请使用下方"复制链接"按钮</div>';
+            } catch(e) {
+                qrC.innerHTML = '<div style="padding:20px;color:#666;font-size:13px;">二维码生成失败<br>请手动分享配对码</div>';
             }
         }
 
-        function showJoinResponse(){
-            state.step = 2; updateStepUI();
-            $('#stepText').textContent = '步骤 2/3：将回复二维码/链接发送回给对方';
-
-            var sdpB64 = encodeSDP(state.localAnswer);
-            var url = buildConnectionURL(sdpB64, 'answer');
-            $('#joinResponseSection').style.display = 'block';
-            $('#btnJoinRoom').style.display = 'none';
-            $('#panelReceiveResponse').style.display = 'none';
-            $('#tabRow').style.display = 'none';
-
-            var qrContainer = $('#qrJoinResponse');
-            qrContainer.innerHTML = '';
-            try {
-                new QRCode(qrContainer, {
-                    text: url, width: 200, height: 200,
-                    colorDark: '#1a1a2e', colorLight: '#ffffff',
-                    correctLevel: QRCode.CorrectLevel.M
-                });
-            } catch(e){
-                qrContainer.innerHTML = '<div style="padding:20px;color:#666;font-size:13px;">二维码生成失败<br>请使用下方"复制链接"按钮</div>';
-            }
-        }
-
-        async function joinRoom(encodedOffer){
-            state.mode = 'join'; state.step = 1; updateStepUI();
-            var sdp = decodeSDP(encodedOffer);
-            var pc = await createPeerConnection();
-            await pc.setRemoteDescription({ type: 'offer', sdp: sdp });
-            var answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            if(pc.iceGatheringState === 'complete') onICEGatheringComplete();
-            setTimeout(function(){
-                if(!state.localAnswer && pc.localDescription && pc.iceGatheringState !== 'complete'){
-                    state.localAnswer = pc.localDescription.sdp;
-                    showJoinResponse();
-                }
-            }, 5000);
-
-            $('#joinResponseSection').style.display = 'none';
-            $('#joinError').style.display = 'none';
-            $('#panelReceiveResponse').style.display = 'none';
-            $('#tabRow').style.display = 'none';
-            $('#inputJoinCode').value = '';
-            $('#panelCreate').style.display = 'none';
-            $('#panelJoin').style.display = 'block';
-        }
-
-        async function applyResponse(encodedAnswer){
-            var sdp = decodeSDP(encodedAnswer);
-            if(!state.peerConnection) throw new Error('连接已失效，请重新创建房间');
-            await state.peerConnection.setRemoteDescription({ type: 'answer', sdp: sdp });
-            state.step = 3; updateStepUI();
-            $('#stepText').textContent = '步骤 3/3：正在建立P2P加密连接...';
-        }
-
-        function updateStepUI(){
-            var dots = $$('.step-dot');
-            dots.forEach(function(d, i){
-                d.classList.remove('active', 'done');
-                if(i < state.step - 1) d.classList.add('done');
-                if(i === state.step - 1) d.classList.add('active');
-            });
-            if(state.step >= 3) $('#stepText').textContent = '步骤 3/3：P2P连接已建立！';
-        }
-
-        function resetConnection(){
-            if(state.peerConnection){ state.peerConnection.close(); state.peerConnection = null; }
-            state.dataChannel = null;
-            state.localOffer = null; state.localAnswer = null;
-            state.connected = false; state.mode = null; state.step = 1;
+        function resetConnection() {
+            if (state.conn) { state.conn.close(); state.conn = null; }
+            if (state.peer) { state.peer.destroy(); state.peer = null; }
+            state.connected = false; state.mode = null; state.roomCode = '';
             state.partnerNickname = '';
-            clearChat(); updateStatusBadge(); updateStepUI();
+            clearChat(); updateStatusBadge();
 
-            $('#qrCreateContainer').style.display = 'none';
-            $('#joinResponseSection').style.display = 'none';
-            $('#panelReceiveResponse').style.display = 'none';
-            $('#btnCreateRoom').style.display = 'block';
-            $('#btnJoinRoom').style.display = 'block';
-            $('#tabRow').style.display = 'flex';
+            $('#createResult').style.display = 'none';
+            $('#btnGenCode').style.display = 'block';
+            $('#btnCreate').style.display = 'block';
+            $('#btnJoin').style.display = 'block';
             $('#panelCreate').style.display = 'block';
             $('#panelJoin').style.display = 'none';
-            $('#joinError').style.display = 'none';
-            $('#responseError').style.display = 'none';
-            $('#inputJoinCode').value = '';
-            $('#inputResponseCode').value = '';
-            $('#stepText').textContent = '步骤 1/3：创建或加入房间';
+            $('#btnJoin').className = 'btn btn-outline';
+            $('#btnCreate').className = 'btn btn-primary';
+            $('#connectTitle').textContent = '选择方式';
+            $('#connectDesc').textContent = '创建房间获取配对码，或输入已有的配对码加入';
+            $('#inputCode').value = '';
+            $('#btnConnectCode').disabled = true;
+            $('#joinStatus').style.display = 'none';
             $('#qrCreate').innerHTML = '';
-            $('#qrJoinResponse').innerHTML = '';
-            updateStepUI();
+            updateStatusBadge();
         }
 
-        // Event bindings
-        $('#inputNickname').addEventListener('input', function(){
-            $('#btnEnter').disabled = this.value.trim().length === 0;
+        // ===== Event Bindings =====
+
+        // 昵称输入
+        $('#inputNickname').addEventListener('input', function() {
+            $('#btnStart').disabled = this.value.trim().length === 0;
+        });
+        $('#inputNickname').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && this.value.trim()) $('#btnStart').click();
         });
 
-        $('#btnEnter').addEventListener('click', function(){
+        // 开始按钮
+        $('#btnStart').addEventListener('click', function() {
             var nick = $('#inputNickname').value.trim();
-            if(!nick) return;
+            if (!nick) return;
             state.nickname = nick;
             resetConnection();
             showView(viewConnect);
-            $('#stepText').textContent = '步骤 1/3：创建或加入房间';
         });
 
-        $('#btnCreateTab').addEventListener('click', function(){
+        // 创建/加入 切换
+        $('#btnCreate').addEventListener('click', function() {
             $('#panelCreate').style.display = 'block';
             $('#panelJoin').style.display = 'none';
-            $('#panelReceiveResponse').style.display = 'none';
-            $('#joinResponseSection').style.display = 'none';
             this.className = 'btn btn-primary';
-            $('#btnJoinTab').className = 'btn btn-outline';
+            $('#btnJoin').className = 'btn btn-outline';
         });
 
-        $('#btnJoinTab').addEventListener('click', function(){
+        $('#btnJoin').addEventListener('click', function() {
             $('#panelCreate').style.display = 'none';
             $('#panelJoin').style.display = 'block';
-            $('#panelReceiveResponse').style.display = 'none';
-            $('#joinResponseSection').style.display = 'none';
             this.className = 'btn btn-primary';
-            $('#btnCreateTab').className = 'btn btn-outline';
+            $('#btnCreate').className = 'btn btn-outline';
         });
 
-        $('#btnCreateRoom').addEventListener('click', async function(){
+        // 生成配对码 (创建房间)
+        $('#btnGenCode').addEventListener('click', function() {
+            var code = genRoomCode();
+            state.mode = 'create';
+            this.disabled = true;
+            this.textContent = '⏳ 生成中...';
+            updateStatusBadge();
+            // PeerJS uses the code as peer ID
+            initPeer(code);
+            setTimeout(function() {
+                $('#btnGenCode').disabled = false;
+                $('#btnGenCode').textContent = '🎲 重新生成';
+            }, 3000);
+        });
+
+        // 输入配对码 - 限制数字
+        $('#inputCode').addEventListener('input', function() {
+            // Only allow digits
+            this.value = this.value.replace(/\D/g, '').substring(0, 12);
+            $('#btnConnectCode').disabled = this.value.length !== 12;
+        });
+
+        // 加入房间
+        $('#btnConnectCode').addEventListener('click', function() {
+            var code = $('#inputCode').value.trim();
+            if (code.length !== 12) return;
+            state.mode = 'join';
+            state.roomCode = code;
+            this.disabled = true;
+            this.textContent = '⏳ 连接中...';
+            $('#inputCode').disabled = true;
+            $('#joinStatus').style.display = 'block';
+            $('#joinStatus').textContent = '🟡 正在连接对方...';
+            updateStatusBadge();
+            // Create a random peer ID for the joiner, connect to the code
+            var myId = 'j_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+            initPeer(myId);
+            // Wait a moment for peer to open, then connect
+            var checkInterval = setInterval(function() {
+                if (state.peer && !state.peer.destroyed && state.peer.id) {
+                    clearInterval(checkInterval);
+                    connectToPeer(code);
+                }
+            }, 200);
+            // Timeout
+            setTimeout(function() {
+                clearInterval(checkInterval);
+                if (!state.connected) {
+                    $('#joinStatus').textContent = '❌ 连接超时，请确认配对码是否正确';
+                    $('#btnConnectCode').disabled = false;
+                    $('#btnConnectCode').textContent = '🔗 重试';
+                    $('#inputCode').disabled = false;
+                }
+            }, 30000);
+        });
+
+        // 点击代码框复制
+        $('#codeBox').addEventListener('click', async function() {
             try {
-                this.disabled = true;
-                this.textContent = '⏳ 正在生成连接信息...';
-                await createRoom();
-            } catch(err){
-                showToast('创建房间失败: ' + err.message, 3000);
-            } finally {
-                this.disabled = false;
-                this.textContent = '🔗 生成连接邀请';
-            }
+                await copyToClipboard(state.roomCode);
+                showToast('✓ 配对码已复制！发送给对方即可');
+            } catch(e) { showToast('复制失败，请手动输入'); }
         });
 
-        $('#btnCopyCreate').addEventListener('click', async function(){
-            if(!state.localOffer) return;
-            var url = buildConnectionURL(encodeSDP(state.localOffer), 'offer');
-            try {
-                await copyToClipboard(url);
-                var hint = $('#copyHintCreate');
-                hint.classList.add('show');
-                setTimeout(function(){ hint.classList.remove('show'); }, 2000);
-                showToast('✓ 链接已复制！发送给对方即可');
-            } catch(e){ showToast('复制失败，请手动选择链接文本'); }
-        });
-
-        $('#btnJoinRoom').addEventListener('click', async function(){
-            var code = $('#inputJoinCode').value.trim();
-            if(!code){ showToast('请输入连接信息'); return; }
-            var parsed = parseConnectionURL(code);
-            if(!parsed || !parsed.sdp || parsed.type !== 'offer'){
-                $('#joinError').textContent = '❌ 无效的连接信息，请检查并重试';
-                $('#joinError').style.display = 'block';
-                return;
-            }
-            if(parsed.nick){
-                try { state.partnerNickname = decodeURIComponent(parsed.nick); } catch(e){}
-            }
-            try {
-                this.disabled = true;
-                this.textContent = '⏳ 正在解析...';
-                $('#joinError').style.display = 'none';
-                await joinRoom(parsed.sdp);
-            } catch(err){
-                $('#joinError').textContent = '❌ 连接失败: ' + err.message;
-                $('#joinError').style.display = 'block';
-            } finally {
-                this.disabled = false;
-                this.textContent = '🔓 解析并连接';
-            }
-        });
-
-        $('#btnCopyJoinResponse').addEventListener('click', async function(){
-            if(!state.localAnswer) return;
-            var url = buildConnectionURL(encodeSDP(state.localAnswer), 'answer');
-            try {
-                await copyToClipboard(url);
-                var hint = $('#copyHintJoin');
-                hint.classList.add('show');
-                setTimeout(function(){ hint.classList.remove('show'); }, 2000);
-                showToast('✓ 回复链接已复制！发送给对方即可');
-            } catch(e){ showToast('复制失败，请手动选择链接文本'); }
-        });
-
-        $('#btnApplyResponse').addEventListener('click', async function(){
-            var code = $('#inputResponseCode').value.trim();
-            if(!code){ showToast('请粘贴对方的回复信息'); return; }
-            var parsed = parseConnectionURL(code);
-            if(!parsed || !parsed.sdp || parsed.type !== 'answer'){
-                $('#responseError').textContent = '❌ 无效的回复信息，请检查并重试';
-                $('#responseError').style.display = 'block';
-                return;
-            }
-            try {
-                this.disabled = true;
-                this.textContent = '⏳ 正在建立连接...';
-                $('#responseError').style.display = 'none';
-                await applyResponse(parsed.sdp);
-                $('#panelReceiveResponse').style.display = 'none';
-            } catch(err){
-                $('#responseError').textContent = '❌ 连接失败: ' + err.message;
-                $('#responseError').style.display = 'block';
-            } finally {
-                this.disabled = false;
-                this.textContent = '🔗 完成连接';
-            }
-        });
-
-        $('#btnBackToWelcome').addEventListener('click', function(){
+        // 返回
+        $('#btnBack').addEventListener('click', function() {
             resetConnection();
             showView(viewWelcome);
         });
 
-        $('#btnLeave').addEventListener('click', function(){
-            if(confirm('确定要离开聊天吗？所有消息将丢失。')){
+        // 离开聊天
+        $('#btnLeave').addEventListener('click', function() {
+            if (confirm('确定要离开吗？所有消息将丢失。')) {
                 resetConnection();
                 showView(viewWelcome);
             }
         });
 
-        btnSend.addEventListener('click', sendMessage);
-        chatInput.addEventListener('keydown', function(e){
-            if(e.key === 'Enter' && !e.shiftKey){
-                e.preventDefault();
-                sendMessage();
-            }
+        // 发送消息
+        btnSend.addEventListener('click', sendMsg);
+        chatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
         });
-
-        function sendMessage(){
+        function sendMsg() {
             var text = chatInput.value.trim();
-            if(!text || !state.connected) return;
+            if (!text || !state.connected) return;
             sendChatMessage(text);
             chatInput.value = '';
             chatInput.style.height = 'auto';
         }
-
-        chatInput.addEventListener('input', function(){
+        chatInput.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 100) + 'px';
         });
 
+        // 正在输入
         var typingTimer = null;
-        chatInput.addEventListener('input', function(){
+        chatInput.addEventListener('input', function() {
             sendTypingIndicator(true);
             clearTimeout(typingTimer);
             typingTimer = setTimeout(function(){ sendTypingIndicator(false); }, 2000);
         });
 
-        $('#btnSoundToggle').addEventListener('click', function(){
+        // 提示音开关
+        $('#btnSoundToggle').addEventListener('click', function() {
             state.soundEnabled = !state.soundEnabled;
             this.textContent = state.soundEnabled ? '🔔' : '🔕';
             showToast(state.soundEnabled ? '提示音已开启' : '提示音已关闭');
         });
 
-        function checkURLForConnection(){
+        // ===== URL 自动加入 =====
+        function checkURL() {
             var hash = window.location.hash;
-            if(hash && hash.startsWith('#connect=')){
-                var parsed = parseConnectionURL(hash);
-                if(parsed && parsed.type === 'offer' && parsed.sdp){
-                    if(parsed.nick){
-                        try { state.partnerNickname = decodeURIComponent(parsed.nick); } catch(e){}
-                    }
+            if (hash && hash.startsWith('#code=')) {
+                var code = hash.substring('#code='.length).replace(/\D/g, '').substring(0, 12);
+                if (code.length === 12) {
                     state.nickname = $('#inputNickname').value.trim() || '匿名用户'+Math.floor(Math.random()*1000);
-                    if(!$('#inputNickname').value.trim()) $('#inputNickname').value = state.nickname;
-                    $('#btnEnter').disabled = false;
+                    if (!$('#inputNickname').value.trim()) $('#inputNickname').value = state.nickname;
+                    $('#btnStart').disabled = false;
                     showView(viewConnect);
                     $('#panelCreate').style.display = 'none';
                     $('#panelJoin').style.display = 'block';
-                    $('#btnCreateTab').className = 'btn btn-outline';
-                    $('#btnJoinTab').className = 'btn btn-primary';
-                    $('#inputJoinCode').value = window.location.href;
-                    showToast('检测到连接邀请！请输入昵称后点击"解析并连接"');
-                } else if(parsed && parsed.type === 'answer' && parsed.sdp){
-                    showToast('检测到回复信息。如果您是房间创建者，请粘贴到回复输入框中。');
-                    showView(viewConnect);
-                    $('#panelCreate').style.display = 'block';
-                    $('#panelReceiveResponse').style.display = 'block';
-                    $('#inputResponseCode').value = window.location.href;
-                    $('#tabRow').style.display = 'none';
-                    $('#panelJoin').style.display = 'none';
+                    $('#btnJoin').className = 'btn btn-primary';
+                    $('#btnCreate').className = 'btn btn-outline';
+                    $('#inputCode').value = code;
+                    $('#btnConnectCode').disabled = false;
+                    showToast('检测到配对码，点击"连接"加入');
+                    // Auto-connect
+                    setTimeout(function(){ $('#btnConnectCode').click(); }, 500);
                 }
             }
         }
+        checkURL();
+        window.addEventListener('hashchange', checkURL);
 
-        checkURLForConnection();
-        window.addEventListener('hashchange', checkURLForConnection);
-
-        window.addEventListener('beforeunload', function(e){
-            if(state.connected){
+        // 离开确认
+        window.addEventListener('beforeunload', function(e) {
+            if (state.connected) {
                 e.preventDefault();
-                e.returnValue = '聊天正在进行中，确定要离开吗？';
+                e.returnValue = '聊天进行中，确定离开？';
                 return e.returnValue;
             }
         });
 
-        console.log('🔒 匿名P2P聊天工具已就绪');
-        console.log('  - WebRTC P2P 加密直连');
-        console.log('  - 无服务器存储');
-        console.log('  - QR码/链接交换信令');
-        console.log('  - 完全匿名');
+        console.log('🔒 匿名P2P聊天工具 v2 | PeerJS信令 + WebRTC P2P直连');
     })();
     </script>
 </body>
