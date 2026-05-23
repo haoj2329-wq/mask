@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>匿名P2P聊天 | Anonymous Chat v10</title>
+    <title>匿名P2P聊天 | Anonymous Chat v13</title>
     <style>
         :root {
             --bg: #f0f2f5;
@@ -341,7 +341,7 @@
     <div class="toast" id="toast"></div>
 
     <script>
-    // ===== 匿名P2P聊天 v12 — PeerJS WebRTC =====
+    // ===== 匿名P2P聊天 v13 — PeerJS WebRTC + 智能重连 =====
     (function(){
         var $=function(s){return document.querySelector(s)};
         var views={welcome:$('#viewWelcome'),waiting:$('#viewWaiting'),chat:$('#viewChat')};
@@ -413,7 +413,8 @@
         }
 
         // ===== PeerJS 连接管理 =====
-        var waitStartTime=0,waitTimer=null,reconnectTimer=null;
+        var waitStartTime=0,waitTimer=null,reconnectTimer=null,connOpenTimer=null;
+        var connectAttempts=0; // DataChannel 连接尝试次数
         var isInitiator=false; // 第一个进入的人是发起者
 
         function updateWaitStatus(){
@@ -426,7 +427,8 @@
             else if(elapsed<15)tipText='已连接信令，等待对方进入...';
             else if(elapsed<30)tipText='等待中... 请确认房间名一致';
             else tipText='连接耗时较长？建议双方都点击刷新重连';
-            $('#waitSubtitle').textContent='已等待 '+timeStr+' | '+tipText;
+            var attText=connectAttempts>0?' | 尝试连接: '+connectAttempts+'次':'';
+            $('#waitSubtitle').textContent='已等待 '+timeStr+' | '+tipText+attText;
         }
 
         // 加载PeerJS库
@@ -445,8 +447,9 @@
         }
 
         function cleanup(){
-            clearTimeout(reconnectTimer);clearInterval(waitTimer);
-            waitTimer=null;
+            clearTimeout(reconnectTimer);clearTimeout(connOpenTimer);clearInterval(waitTimer);
+            reconnectTimer=null;connOpenTimer=null;waitTimer=null;
+            connectAttempts=0;
             try{if(dataConn){dataConn.close()}}catch(e){}
             try{if(peer&&peer.destroy){peer.destroy()}}catch(e){}
             dataConn=null;peer=null;
@@ -460,6 +463,7 @@
 
             cleanup();
             clearChat();state.partnerNickname='';state.connected=false;btnSend.disabled=true;
+            state._reconnectDelay=4000; state._targetId=null; // ★重置重连状态
             isInitiator=true; // 默认自己是发起者
             waitStartTime=Date.now();
 
@@ -501,9 +505,17 @@
                 iceServers:[
                     {urls:'stun:stun.l.google.com:19302'},
                     {urls:'stun:stun1.l.google.com:19302'},
+                    {urls:'stun:stun2.l.google.com:19302'},
+                    {urls:'stun:stun3.l.google.com:19302'},
+                    {urls:'stun:stun4.l.google.com:19302'},
                     {urls:'stun:stun.cloudflare.com:3478'},
-                    {urls:'stun:stun.stunprotocol.org:3478'}
-                ]
+                    {urls:'stun:stun.stunprotocol.org:3478'},
+                    // 免费 TURN 中继 — 当 STUN 穿透失败时的后备方案
+                    {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+                    {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+                    {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}
+                ],
+                iceCandidatePoolSize:2
             };
 
             // 先尝试注册 idA，失败则用 idB
@@ -511,10 +523,10 @@
         }
 
         function tryRegister(myId, otherId, rtcConfig, attempt){
-            if(attempt>4){showToast('连接失败，请检查网络后重试', 4000);clearInterval(waitTimer);showView(views.welcome);return;}
+            if(attempt>9){showToast('连接失败，请检查网络后重试', 4000);clearInterval(waitTimer);showView(views.welcome);return;}
 
             console.log('[P2P] 尝试注册 ID:', myId, '(第'+(attempt+1)+'次)');
-            $('#waitSubtitle').textContent=attempt>0?'正在重试连接信令... ('+(attempt+1)+'/5)':'正在连接信令服务器...';
+            $('#waitSubtitle').textContent=attempt>0?'正在重试连接信令... ('+(attempt+1)+'/10)':'正在连接信令服务器...';
 
             var p=new Peer(myId,{debug:1,config:rtcConfig});
             var done=false;
@@ -528,7 +540,7 @@
 
                 // 替换全局peer引用
                 try{if(peer&&peer!==p&&peer.destroy)peer.destroy()}catch(e){}
-                peer=p; state.myId=id;
+                peer=p; state.myId=id; state._targetId=otherId; // ★存储目标ID供重连使用
 
                 $('#waitSubtitle').textContent='已就绪，等待对方进入房间...';
 
@@ -537,15 +549,19 @@
                 try{
                     var conn=peer.connect(otherId,{reliable:true,serialization:'json'});
                     handleConnection(conn);
+                    // ★关键修复: connect()可能不抛异常但连接永远不会open
+                    // 启动定时重试，连接成功后会自动停止
+                    scheduleReconnect(id, myId, otherId);
                 }catch(e){
                     console.log('[P2P] 连接对方失败 (对方可能还没来):', e.message);
-                    scheduleReconnect(otherId);
+                    scheduleReconnect(id, myId, otherId);
                 }
 
                 // 也监听对方的主动连接
                 peer.on('connection',function(incomingConn){
                     console.log('[P2P] ← 对方主动连接我:', incomingConn.peer);
                     isInitiator=false;
+                    clearTimeout(reconnectTimer);reconnectTimer=null; // 对方连过来了，停止主动重试
                     handleConnection(incomingConn);
                 });
             });
@@ -594,28 +610,70 @@
             });
         }
 
-        function scheduleReconnect(otherId){
+        function scheduleReconnect(myRegisteredId, myCurrentId, otherId){
+            // 定期重试 peer.connect()，直到连接成功
+            // myRegisteredId: 信令层面注册的ID（用于判断peer是否还活跃）
+            // myCurrentId: 当前尝试的ID（在idA/idB切换时会变）
+            // otherId: 要连接的目标ID
             clearTimeout(reconnectTimer);
+            var delay=state._reconnectDelay||4000;
+            state._reconnectDelay=Math.min(delay+2000, 15000); // 递增延迟，最多15秒
+
+            console.log('[P2P] 计划', delay+'ms 后重试 connect →', otherId);
+            $('#waitSubtitle').textContent='等待对方上线，'+Math.round(delay/1000)+'秒后自动重试...';
+
             reconnectTimer=setTimeout(function(){
-                if(!state.connected&&peer&&!dataConn){
-                    console.log('[P2P] 定时重试连接:', otherId);
-                    try{
-                        var conn=peer.connect(otherId,{reliable:true,serialization:'json'});
-                        handleConnection(conn);
-                    }catch(e){console.log('[P2P] 重试失败:', e.message)}
+                if(state.connected){return;}
+                if(!peer||peer.destroyed){return;}
+
+                connectAttempts++;
+                console.log('[P2P] 主动重试 connect(#'+connectAttempts+') →', otherId);
+                $('#waitSubtitle').textContent='尝试连接对方... (第'+connectAttempts+'次)';
+                updateWaitStatus();
+
+                try{
+                    var conn=peer.connect(otherId,{reliable:true,serialization:'json'});
+                    handleConnection(conn);
+                    // 如果这次还不开，继续重试
+                    if(!state.connected){
+                        scheduleReconnect(myRegisteredId, myCurrentId, otherId);
+                    }
+                }catch(e){
+                    console.log('[P2P] 重试 connect 失败:', e.message);
+                    if(!state.connected){
+                        scheduleReconnect(myRegisteredId, myCurrentId, otherId);
+                    }
                 }
-            },3000);
+            },delay);
         }
 
         function handleConnection(conn){
+            // ★ 超时检测：如果连接在10秒内没打开 → 判定失败，清理并触发重试
+            clearTimeout(connOpenTimer);
+            var connStartTime=Date.now();
+            connOpenTimer=setTimeout(function(){
+                if(state.connected)return;
+                // 检查这个connection是不是就是当前的dataConn
+                // 如果conn.on('open')从未触发，dataConn仍是null或别的值
+                console.log('[P2P] ⚠ DataChannel 超时未打开 (已等 '+(Date.now()-connStartTime)+'ms)，清理重试');
+                try{conn.close()}catch(e){}
+                if(!state.connected&&peer&&!peer.destroyed){
+                    scheduleReconnect(state.myId, state.myId, state._targetId);
+                }
+            },10000);
+
             conn.on('open',function(){
+                clearTimeout(connOpenTimer);connOpenTimer=null;
+                clearTimeout(reconnectTimer);reconnectTimer=null; // ★停止重试
+                state._reconnectDelay=4000; // 重置延迟
+                connectAttempts=0;
+
                 if(dataConn&&dataConn!==conn){
                     console.log('[P2P] 关闭旧连接，使用新连接');
                     try{dataConn.close()}catch(e){}
                 }
                 dataConn=conn;
                 state.connected=true;
-                clearTimeout(reconnectTimer);
                 clearInterval(waitTimer);waitTimer=null;
 
                 console.log('[P2P] ✅ 连接建立! Remote:', conn.peer);
@@ -779,7 +837,7 @@
         checkURL();window.addEventListener('hashchange',checkURL);
         window.addEventListener('beforeunload',function(e){if(state.connected){e.preventDefault();e.returnValue='聊天进行中'}});
 
-        console.log('匿名P2P聊天 v12 | PeerJS WebRTC');
+        console.log('匿名P2P聊天 v13 | PeerJS WebRTC + 智能重连');
 
         // 预加载PeerJS库
         (function preloadPeerJS(){
