@@ -483,20 +483,18 @@
 
         function doConnect(){
             var targetId=roomToPeerId(state.roomName);
-            console.log('[PeerJS] Target/Room ID:', targetId, 'Room:', state.roomName);
+            console.log('[P2P] Target ID:', targetId, 'Room:', state.roomName);
 
-            // 关键修复：用 targetId 作为自己的 PeerID 注册到信令服务器
-            // 这样对方用同样的房间名 → 同样的 targetId → 就能找到我们
             state.myId=targetId;
 
-            // 显示安全指纹 - 用房间名hash作为指纹基础
+            // 安全指纹
             var fp=targetId.replace(/-/g,'').substring(0,8);
             $('#fpDisplay').textContent=fp;
             $('#waitFingerprint').style.display='block';
 
             $('#waitSubtitle').textContent='正在连接信令服务器...';
 
-            // ICE配置 - 多个STUN确保NAT穿透
+            // ICE配置
             var rtcConfig={
                 iceServers:[
                     {urls:'stun:stun.l.google.com:19302'},
@@ -512,88 +510,56 @@
                 config:rtcConfig
             });
 
+            // ===== 注册成功的处理 =====
             peer.on('open',function(id){
-                console.log('[PeerJS] 我的Peer ID (注册成功):', id);
-                $('#waitSubtitle').textContent='已就绪，等待对方进入房间...';
+                console.log('[P2P] ✓ 注册成功! 我的ID:', id);
 
-                // 同时也主动尝试连接（防止对方先注册了但我们没感知到）
-                // 这种情况下 connect 到自己会失败，忽略即可
-                setTimeout(function(){
-                    if(!state.connected){
-                        try{var conn=peer.connect(targetId,{reliable:true});handleConnection(conn)}catch(e){}
-                    }
-                },1000);
+                // 立即尝试连接目标ID
+                // 情况A: 我是第一个注册的 → connect(targetId)会报peer-unavailable → 定时重试
+                // 情况B: 对方先占了targetId → 我这个open不该触发(PeerJS应该拒绝)
+                // 情况C: PeerJS允许同ID共存 → connect(targetId)会连到对方!
+                tryConnect(targetId);
+
+                $('#waitSubtitle').textContent='已就绪，等待对方进入房间...';
             });
 
+            // ===== 收到对方的连接请求 (被动方) =====
             peer.on('connection',function(conn){
-                console.log('[PeerJS] 收到来连接请求:', conn.peer, '→ 我的目标ID:', targetId);
-                
+                console.log('[P2P] ← 收到连接请求:', conn.peer, '(我是被连接方)');
+                isInitiator=false;
                 handleConnection(conn);
             });
 
+            // ===== 错误处理 =====
             peer.on('error',function(err){
-                console.error('[PeerJS] Error:', err.type, err);
-                
+                console.error('[P2P] Error:', err.type, err.message || '');
+
                 if(err.type==='peer-unavailable'){
-                    // 对方还没进入房间 - 正常，继续等
-                    console.log('[PeerJS] 对方尚未进入房间，等待中...');
+                    // 目标ID不存在于信令服务器上 — 对方还没进来
+                    // 这是正常情况：我是先来的，继续等待+定时重试
+                    console.log('[P2P] 对方尚未进入，继续等待...');
                     $('#waitSubtitle').textContent='已就绪，等待对方进入房间...';
-                    
-                    // 每3秒重试一次连接
                     scheduleReconnect(targetId);
-                    
+
                 }else if(err.type==='unavailable-id'){
-                    // ID已被占用！说明对方已经用这个房间名注册了
-                    // 这正是我们要的情况：换个随机ID，然后去连接对方的targetId
-                    console.log('[PeerJS] ID已被占用 — 对方已在房间内！切换为连接模式...');
-                    $('#waitSubtitle').textContent='发现对方，正在建立连接...';
+                    // 目标ID已被占用！说明对方已经用这个房间名注册了
+                    // 关键：切换为随机ID，然后主动去连对方
+                    console.log('[P2P] ID已被占用 → 对方已在线！切换为连接模式...');
+                    fallbackAndConnect(targetId, rtcConfig);
 
-                    var myFallbackId='u'+Date.now().toString(36)+'-'+Math.random().toString(36).substr(2,6);
-                    state.myId=myFallbackId;
-
-                    var peer2=new Peer(myFallbackId,{
-                        debug:1,
-                        config:rtcConfig
-                    });
-
-                    peer2.on('open',function(id2){
-                        console.log('[PeerJS] 用备用ID注册成功:', id2, '→ 连接到对方:', targetId);
-                        
-                        // 用对方的ID（也就是targetId）发起连接
-                        var conn=peer2.connect(targetId,{reliable:true});
-                        
-                        // 替换peer引用
-                        try{if(peer&&peer.destroy)peer.destroy()}catch(e){}
-                        peer=peer2;
-                        
-                        handleConnection(conn);
-                        
-                        $('#waitSubtitle').textContent='正在建立P2P加密通道...';
-                    });
-
-                    peer2.on('error',function(err2){
-                        console.error('[PeerJS] 备用ID错误:', err2.type, err2);
-                        if(err2.type==='unavailable-id'){
-                            // 极端情况：两个ID都被占用，再试一次完整流程
-                            console.log('[PeerJS] 备用ID也被占用，重新开始...');
-                            try{if(peer2&&peer2.destroy)peer2.destroy()}catch(e){}
-                            doConnect();
-                        }
-                    });
-                    
                 }else if(err.type==='network'||err.type==='server-error'||err.type==='socket-error'||err.type==='socket-closed'){
                     clearInterval(waitTimer);waitTimer=null;
                     showView(views.welcome);
                     showToast('网络错误: '+err.type, 4000);
-                    
+
                 }else{
-                    console.warn('[PeerJS] 未处理错误:', err.type);
+                    console.warn('[P2P] 未处理错误:', err.type);
                     $('#waitSubtitle').textContent='错误: '+err.type;
                 }
             });
 
             peer.on('disconnected',function(){
-                console.log('[PeerJS] 与信令服务器断开');
+                console.log('[P2P] 信令断开');
                 if(state.connected){
                     addSystemMsg('⚠️ 与信令服务器断开，聊天可能中断');
                 }else{
@@ -601,6 +567,80 @@
                     try{peer.reconnect()}catch(e){}
                 }
             });
+        }
+
+        // 主动发起连接
+        function tryConnect(targetId){
+            if(!peer||state.connected||dataConn){return;}
+            console.log('[P2P] → 主动连接目标:', targetId);
+            try{
+                var conn=peer.connect(targetId,{reliable:true,serialization:'json'});
+                handleConnection(conn);
+            }catch(e){
+                console.error('[P2P] 连接失败:', e);
+                scheduleReconnect(targetId);
+            }
+        }
+
+        // Fallback: 用随机ID注册后连接对方
+        function fallbackAndConnect(targetId, rtcConfig){
+            if(state.connected)return;
+            $('#waitSubtitle').textContent='发现对方，建立加密通道中...';
+
+            var myFallbackId='u'+Date.now().toString(36)+'-'+Math.random().toString(36).substr(2,6);
+            console.log('[P2P] 创建备用PeerID:', myFallbackId, '→ 连接目标:', targetId);
+            state.myId=myFallbackId;
+
+            // 先销毁旧的peer
+            try{if(peer&&peer.destroy){peer.destroy()}}catch(e){}
+            peer=null; dataConn=null;
+
+            setTimeout(function(){
+                if(state.connected)return;
+                var p2=new Peer(myFallbackId,{debug:1,config:rtcConfig});
+
+                p2.on('open',function(id2){
+                    console.log('[P2P] ✓ 备用ID注册成功:', id2);
+                    if(state.connected){try{p2.destroy()}catch(e){}return;}
+
+                    peer=p2;
+
+                    // 主动连接对方的targetId
+                    console.log('[P2P] → 用备用ID连接对方:', targetId);
+                    try{
+                        var conn=peer.connect(targetId,{reliable:true,serialization:'json'});
+                        handleConnection(conn);
+                    }catch(e){
+                        console.error('[P2P] 备用连接失败:', e);
+                        scheduleReconnect(targetId);
+                    }
+
+                    $('#waitSubtitle').textContent='正在建立P2P加密通道...';
+                });
+
+                p2.on('error',function(err2){
+                    console.error('[P2P] 备用Peer错误:', err2.type);
+                    if(err2.type==='unavailable-id'){
+                        console.log('[P2P] 备用ID也被占用, 重试...');
+                        try{p2.destroy()}catch(e){}
+                        doConnect();
+                    }
+                });
+
+                p2.on('disconnected',function(){
+                    console.log('[P2P] 备用Peer断开');
+                    if(!state.connected){$('#waitSubtitle').textContent='连接中断...';}
+                });
+
+                // 设置超时保护 - 5秒内必须完成
+                setTimeout(function(){
+                    if(!state.connected && !dataConn && peer===p2){
+                        console.warn('[P2P] 备用连接超时，重试完整流程');
+                        try{p2.destroy()}catch(e){}
+                        doConnect();
+                    }
+                },8000);
+            },500);
         }
 
         function connectToTarget(targetId){
