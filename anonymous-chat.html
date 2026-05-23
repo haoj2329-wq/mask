@@ -258,17 +258,32 @@
 
     // Events
     var ni=$('#ni'),ri=$('#ri'),be=$('#be');
-    function ckIn(){be.disabled=!(ni.value.trim()&&ri.value.trim())}
-    ni.addEventListener('input',ckIn);ni.addEventListener('compositionend',ckIn);
-    ri.addEventListener('input',ckIn);ri.addEventListener('compositionend',ckIn);
+    function ckIn(){
+        if(ni.value.trim()&&ri.value.trim())be.removeAttribute('disabled');
+        else be.setAttribute('disabled','');
+    }
+    ['input','keyup','change','compositionend','blur'].forEach(function(ev){
+        ni.addEventListener(ev,ckIn);ri.addEventListener(ev,ckIn);
+    });
     ni.addEventListener('keydown',function(e){if(e.key==='Enter')ri.focus()});
-    ri.addEventListener('keydown',function(e){if(e.key==='Enter'&&!be.disabled)be.click()});ckIn();
+    ri.addEventListener('keydown',function(e){if(e.key==='Enter'&&!be.disabled)be.click()});
+    // Extra safety: also bind click on enter button directly
+    be.addEventListener('click',function(){if(!be.disabled)_enter()});
+    ckIn();
 
     $('#btShare').addEventListener('click',function(){
         var nn=ni.value.trim(),rn=ri.value.trim();
-        if(!rn){toast('Enter room name first');return;}
+        if(!rn){toast('Enter room name first',2500);return;}
         var url=window.location.href.split('#')[0]+'#room='+encodeURIComponent(rn)+(nn?'&nick='+encodeURIComponent(nn):'');
-        cpTx(url).then(function(){toast('Link copied! Share it with your peer ✓')}).catch(function(){toast('Copy failed')});
+        var ok=false;
+        try{
+            var ta=document.createElement('textarea');
+            ta.value=url;ta.style.cssText='position:fixed;left:-9999px';
+            document.body.appendChild(ta);ta.focus();ta.select();
+            ok=document.execCommand('copy');
+            document.body.removeChild(ta);
+        }catch(e){}
+        toast(ok?'Link copied! Share it with your peer':'Copy failed, please retry',ok?2500:5000);
     });
 
     $('#bcBack').addEventListener('click',function(){cleanup();show(V.w);uB()});
