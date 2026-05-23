@@ -647,11 +647,18 @@
             iceCandidatePoolSize: 2
         };
 
-        function encodeSDP(sdp){ return btoa(unescape(encodeURIComponent(sdp))); }
-        function decodeSDP(enc){ return decodeURIComponent(escape(atob(enc))); }
+        function encodeSDP(sdp){
+            return btoa(unescape(encodeURIComponent(sdp)))
+                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+        function decodeSDP(enc){
+            enc = enc.replace(/-/g, '+').replace(/_/g, '/');
+            while(enc.length % 4) enc += '=';
+            return decodeURIComponent(escape(atob(enc)));
+        }
 
         function buildConnectionURL(sdpB64, type){
-            return window.location.origin + window.location.pathname + '#connect=' + type + '&sdp=' + sdpB64 + '&nick=' + encodeURIComponent(state.nickname);
+            return window.location.origin + window.location.pathname + '#connect=' + type + '&sdp=' + encodeURIComponent(sdpB64) + '&nick=' + encodeURIComponent(state.nickname);
         }
 
         function parseConnectionURL(urlOrCode){
@@ -665,6 +672,7 @@
                 var kv = pair.split('=');
                 var key = kv[0];
                 var val = kv.slice(1).join('=');
+                try { val = decodeURIComponent(val); } catch(e){}
                 parts[key] = val;
             });
             return parts;
