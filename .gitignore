@@ -20,3 +20,11 @@ Thumbs.db
 # 日志
 *.log
 npm-debug.log*
+
+# 工具缓存
+.codebuddy/
+.playwright-cli/
+
+# 测试截图
+*.yaml
+waiting-*.png
