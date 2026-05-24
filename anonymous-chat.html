@@ -260,7 +260,10 @@
         var servers=[
             {urls:'stun:stun.l.google.com:19302'},
             {urls:'stun:stun1.l.google.com:19302'},
-            {urls:'stun:stun.nextcloud.com:443'}
+            {urls:'stun:stun.nextcloud.com:443'},
+            // Free public TURN servers for symmetric NAT traversal
+            {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+            {urls:'turns:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'}
         ];
         var tu=$('#turnUrl').value.trim(), tn=$('#turnUser').value.trim(), tp=$('#turnPass').value.trim();
         if(tu&&tn&&tp){
@@ -294,14 +297,24 @@
     function stopR(){clearTimeout(rTimer);rTimer=null}
     function cleanup(){stopR();clearInterval(timer);timer=null;nTry=0;clPc();try{if(dc)dc.close()}catch(e){}try{if(pr&&pr.destroy)pr.destroy()}catch(e){}dc=null;pr=null;S.ct=false;if(rly){try{rly.close()}catch(e){}rly=null}rlyActive=false;rlyNick=''}
 
+    // Relay: supports custom WebSocket relay (set window._relayUrl) or local server.
+    // On GitHub Pages (no WS support), falls back to TURN-assisted P2P retry.
     function connectRelay(){
         if(rly||rlyActive||S.ct)return;
-        var proto=location.protocol==='https:'?'wss:':'ws:';
-        var url=proto+'//'+location.host;
-        console.log('[v16] ⇋relay connecting:',url);
-        var ws=new WebSocket(url);
+        var url=window._relayUrl||null;
+        if(!url){
+            var proto=location.protocol==='https:'?'wss:':'ws:';
+            url=proto+'//'+location.host;
+            console.log('[v16] \u21c7relay trying local:',url);
+        } else {
+            console.log('[v16] \u21c7relay connecting (custom):',url);
+        }
+        try{var ws=new WebSocket(url)}catch(e){
+            console.log('[v16] \u21c7relay WS failed, falling back to TURN-assisted P2P');
+            tryTurnRetry();return
+        }
         ws.onopen=function(){
-            console.log('[v16] ⇋relay open');
+            console.log('[v16] \u21c7relay open');
             ws.send(JSON.stringify({t:'j',r:S.rn,n:S.nn}));
         };
         ws.onmessage=function(ev){
@@ -309,14 +322,13 @@
             try{data=JSON.parse(ev.data)}catch(e){return}
             if(!data)return;
             if(data.t==='j'){
-                // Peer joined relay room
                 rlyActive=true;rlyNick=data.n||'';S.pn=rlyNick;
-                console.log('[v16] ⇋relay peer joined:',rlyNick);
+                console.log('[v16] \u21c7relay peer joined:',rlyNick);
                 if(!S.ct){
                     stopR();clearInterval(timer);timer=null;
                     var n=Math.random().toString(36).substr(2,10)+Date.now().toString(36);S._myN=n;
                     var m=S._myN||'',ps=[m,n].sort(),vc=sHash(ps[0]+ps[1]).substring(0,6).toUpperCase();
-                    S._vc=vc;$('#fpD').textContent=vc;
+                    S._vc=vc;$('\#fpD').textContent=vc;
                     sysMsg(t('t_verify')+vc);
                     sysMsg(rlyNick+t('t_joined'));
                     uB();uCH();bs.disabled=false;show(V.ch);
@@ -329,13 +341,28 @@
                 if(!S.ct){sysMsg(t('t_left'));bs.disabled=true;uB()}
             }
         };
-        ws.onclose=function(){
-            console.log('[v16] ⇋relay closed');
+        ws.onclose=function(ev){
+            console.log('[v16] \u21c7relay closed code='+ev.code);
             if(rly===ws){rly=null;rlyActive=false}
+            if(ev.code>=1000&&S.ct===false)tryTurnRetry();
         };
-        ws.onerror=function(e){console.log('[v16] ⇋relay err',e)};
+        ws.onerror=function(e){
+            console.log('[v16] \u21c7relay err — fallback to TURN P2P');
+            try{ws.close()}catch(x){}
+            rly=null;tryTurnRetry();
+        };
         rly=ws;
     }
+
+    // When WS relay unavailable (e.g. GitHub Pages), re-attempt P2P with public TURN
+    function tryTurnRetry(){
+        if(S.ct||rlyActive)return;
+        sysMsg('\u26a1 Retrying P2P via public TURN...');
+        toast('TURN retry active',3000);
+        cleanup();
+        setTimeout(function(){if(window._enter)_enter()},500);
+    }
+
 
     window._enter=function(){
         S.nn=$('#ni').value.trim();S.rn=$('#ri').value.trim().toLowerCase();
