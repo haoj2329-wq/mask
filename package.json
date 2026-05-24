@@ -1,0 +1,25 @@
+{
+  "name": "20260523203057",
+  "version": "1.0.0",
+  "description": "基于 **WebRTC + PeerJS** 的端到端加密点对点聊天 — 无服务器中转 · 无消息存储 · 无需注册",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haoj2329-wq/mask.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/haoj2329-wq/mask/issues"
+  },
+  "homepage": "https://github.com/haoj2329-wq/mask#readme",
+  "dependencies": {
+    "ws": "^8.21.0"
+  }
+}

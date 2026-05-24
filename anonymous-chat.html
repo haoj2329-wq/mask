@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Anonymous P2P Chat v16</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='6' fill='%231a73e8'/><path d='M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z' fill='%23fff'/></svg>">
     <style>
         :root{--bg:#f0f2f5;--surface:#fff;--surface2:#f7f8fa;--accent:#1a73e8;--accent-h:#1557b0;--accent-l:rgba(26,115,232,.08);--text:#1c1e21;--t2:#65676b;--t3:#8a8d91;--bd:#e4e6eb;--bs:#1a73e8;--bo:#e4e6eb;--danger:#e41e3f;--ok:#00a86b;--warn:#f7b955}
         @media(prefers-color-scheme:dark){:root{--bg:#0d1117;--surface:#161b22;--surface2:#21262d;--accent:#58a6ff;--accent-h:#79c0ff;--accent-l:rgba(88,166,255,.1);--text:#e6edf3;--t2:#8b949e;--t3:#6e7681;--bd:#30363d;--bo:#21262d}}
@@ -29,12 +30,12 @@
         .div{text-align:center;color:var(--t3);font-size:12px;margin:20px 0;position:relative}.div::before,.div::after{content:'';position:absolute;top:50%;width:28%;height:1px;background:var(--bd)}.div::before{left:0}.div::after{right:0}
         .hint{font-size:12px;color:var(--t3);text-align:center;margin-top:4px}
 
-        .wst{text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}.spn{width:44px;height:44px;border:3.5px solid var(--bd);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 18px}@keyframes sp{to{transform:rotate(360deg)}}
+        .wst{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 0 8px;flex-shrink:0}.spn{width:44px;height:44px;border:3.5px solid var(--bd);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 18px}@keyframes sp{to{transform:rotate(360deg)}}
         .wt{font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px}.ws{font-size:13px;color:var(--t2);line-height:1.5;min-height:40px}
         .room{background:var(--surface2);border:1.5px dashed var(--bd);border-radius:10px;padding:14px 18px;font-family:'SF Mono',Consolas,monospace;font-size:15px;font-weight:600;color:var(--accent);word-break:break-all;letter-spacing:.5px;cursor:pointer;user-select:all;margin:20px 0 6px;text-align:center;max-width:300px;margin-left:auto;margin-right:auto}
         .room:hover{border-color:var(--accent);background:var(--accent-l)}.rcp{font-size:11px;color:var(--t3);margin-bottom:24px}
         .fp{background:rgba(0,168,107,.06);border:1px solid rgba(0,168,107,.15);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--t2);margin:12px auto 24px;max-width:320px;text-align:left}.fp code{font-family:'SF Mono',Consolas,monospace;color:var(--ok);font-weight:700;font-size:13px}
-        .wa{margin-top:auto;padding-top:16px}.wtip{font-size:11px;color:var(--t3);text-align:center;margin-top:14px;line-height:1.6}
+        .wa{margin-top:auto;padding-top:16px;flex-shrink:0}.wtip{font-size:11px;color:var(--t3);text-align:center;margin-top:14px;line-height:1.6}
 
         .chdr{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--bd);flex-shrink:0;background:var(--surface)}
         .cav{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#0d47a1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}.ci{flex:1;min-width:0}.cn{font-weight:700;font-size:14px}.cs{font-size:11px;color:var(--t2);display:flex;align-items:center;gap:5px}
@@ -78,12 +79,22 @@
             <div class="div" data-lng="w_divider">or</div>
             <button class="btn bg" id="btShare" data-lng="w_btn_share">📋 Share Link to Join</button>
             <div class="hint" data-lng="w_hint">Click shared link to auto-join room</div>
+            <!-- Advanced: TURN config -->
+            <div style="margin-top:18px">
+                <button class="btn bg bsm" id="btAdv" style="font-size:11px;width:auto;margin:0 auto;display:flex" data-lng="w_adv_btn">⚙ Advanced (TURN Server)</button>
+                <div id="advPanel" style="display:none;margin-top:12px">
+                    <div class="ig"><label data-lng="w_lbl_turn">TURN Server URL</label><input class="if" id="turnUrl" data-lng-placeholder="w_ph_turn" placeholder="turn:your-server.com:3478" autocomplete="off" style="font-size:13px"></div>
+                    <div class="ig"><label data-lng="w_lbl_tuser">Username</label><input class="if" id="turnUser" placeholder="username" autocomplete="off" style="font-size:13px"></div>
+                    <div class="ig"><label data-lng="w_lbl_tpass">Password / Secret</label><input class="if" id="turnPass" type="password" placeholder="password" autocomplete="off" style="font-size:13px"></div>
+                    <div class="hint" data-lng="w_hint_turn">Only needed behind strict firewall. <a href="https://www.metered.ca/tools/openrelay/" target="_blank" style="color:var(--accent)">Get free TURN</a> or self-host Coturn.</div>
+                </div>
+            </div>
         </div>
 
         <!-- Waiting -->
         <div class="vw" id="vWt">
             <div class="wst">
-                <div class="wst"><div class="spn"></div></div>
+                <div class="spn"></div>
                 <div class="wt" id="wtT">Waiting for peer</div>
                 <div class="ws" id="wtS">Make sure peer entered same room name</div>
             </div>
@@ -127,7 +138,7 @@
         hdr_title:'🔒 Anonymous P2P Chat',
         st_ready:'Ready',st_waiting:'Waiting',st_connected:'Connected',st_loading:'Loading',
         w_title:'Anonymous P2P Chat',w_desc:'Enter the same room name to connect with peer via encrypted P2P channel',
-        w_banner:'End-to-end encryption via <strong>PeerJS (WebRTC)</strong>. Multi-signaling + TURN relay ensures NAT traversal.',
+        w_banner:'End-to-end encryption via <strong>PeerJS (WebRTC)</strong>. STUN enabled. For strict firewalls → configure TURN below.',
         w_lbl_nick:'Your Nickname',w_ph_nick:'Your name',w_lbl_room:'Room Name',w_ph_room:'Both enter same room name',
         w_btn_enter:'Enter Room',w_divider:'or',w_btn_share:'📋 Share Link to Join',w_hint:'Click shared link to auto-join room',
         wt_title:'Room: ',wt_init:'Initializing...',wt_ready:'Ready, probing peer...',
@@ -147,13 +158,16 @@
         t_connected:'Connected · P2P Encrypted · ',t_connecting:'Connecting...',
         t_typing:'Peer is typing...',t_leave_confirm:'Leave?',
         t_sig_conn:'Connecting signal...',t_sig_ok:'Signal OK, waiting peer...',t_sig_wait:'Waiting...',t_sig_long:'Taking long? Both click Refresh',
-        t_probed:' | Probed:'
+        t_probed:' | Probed:',
+        w_adv_btn:'⚙ Advanced (TURN Server)',w_lbl_turn:'TURN Server URL',w_ph_turn:'turn:your-server.com:3478',
+        w_lbl_tuser:'Username',w_lbl_tpass:'Password / Secret',
+        w_hint_turn:'Only needed behind strict firewall. <a href="https://www.metered.ca/tools/openrelay/" target="_blank" style="color:var(--accent)">Get free TURN</a> or self-host Coturn.'
     };
     L.zh={
         hdr_title:'🔒 匿名 P2P 聊天',
         st_ready:'就绪',st_waiting:'等待中',st_connected:'已连接',st_loading:'加载中',
         w_title:'匿名 P2P 聊天',w_desc:'输入相同的房间名，即可通过加密 P2P 通道与对方建立连接',
-        w_banner:'端到端加密 · 基于 <strong>PeerJS (WebRTC)</strong> · 多重信令 + TURN 中继确保 NAT 穿透',
+        w_banner:'端到端加密 · 基于 <strong>PeerJS (WebRTC)</strong> · STUN 已启用 · 严格防火墙需配置下方 TURN',
         w_lbl_nick:'你的昵称',w_ph_nick:'输入昵称',w_lbl_room:'房间名',w_ph_room:'双方输入相同房间名',
         w_btn_enter:'进入房间',w_divider:'或',w_btn_share:'📋 分享链接邀请对方',w_hint:'点击分享链接可自动加入房间',
         wt_title:'房间: ',wt_init:'初始化中...',wt_ready:'准备就绪，正在探测对方...',
@@ -172,7 +186,10 @@
         t_connected:'已连接 · P2P 加密 · ',t_connecting:'连接中...',
         t_typing:'对方正在输入...',t_leave_confirm:'确定离开？',
         t_sig_conn:'连接信令服务...',t_sig_ok:'信令已连接，等待对方...',t_sig_wait:'等待中...',t_sig_long:'等待较久？双方点击刷新重连',
-        t_probed:' | 已探测:'
+        t_probed:' | 已探测:',
+        w_adv_btn:'⚙ 高级设置 (TURN服务器)',w_lbl_turn:'TURN 服务器地址',w_ph_turn:'turn:你的服务器.com:3478',
+        w_lbl_tuser:'用户名',w_lbl_tpass:'密码 / 密钥',
+        w_hint_turn:'仅严格防火墙下需要。<a href="https://www.metered.ca/tools/openrelay/" target="_blank" style="color:var(--accent)">获取免费TURN</a> 或自建 Coturn。'
     };
 
     function t(k){var d=L[S.lang]||L.en;return d[k]!==undefined?d[k]:k}
@@ -226,21 +243,32 @@
     // Init language
     try{var sl=localStorage.getItem('anonchat_lang');if(sl&&L[sl])S.lang=sl}catch(e){}
     applyUI();
+    // Restore saved TURN config
+    try{var tc=localStorage.getItem('anonchat_turn');if(tc){var td=JSON.parse(tc);$('#turnUrl').value=td.u||'';$('#turnUser').value=td.n||'';$('#turnPass').value=td.p||''}}catch(e){}
+    function saveTC(){try{localStorage.setItem('anonchat_turn',JSON.stringify({u:$('#turnUrl').value.trim(),n:$('#turnUser').value.trim(),p:$('#turnPass').value.trim()}))}catch(e){}}
+    $('#turnUrl').addEventListener('change',saveTC);$('#turnUser').addEventListener('change',saveTC);$('#turnPass').addEventListener('change',saveTC);
     var pr=null,dc=null;
     var t0=0,timer=null,rTimer=null,nTry=0,pending=[],bid='';
+    var rly=null,rlyActive=false,rlyNick=''/*relay fallback vars*/;
 
     // ★ Multiple signaling servers (failover)
-    var SIGS=[{h:'0.peers.chat',p:'/myapp'},{h:'0.peerjs.com',p:'/'},{h:'0.metered.ca',p:'/myapp'}];
-    // ★ ICE: STUN + free TURN servers
-    var ICE={
-        iceServers:[
-            {urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:stun2.l.google.com:19302'},
-            {urls:'stun:stun.cloudflare.com:3478'},
-            {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
-            {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
-            {urls:'turn:numb.viagenie.ca:3478?transport=tcp',username:'webrtc@live.com',credential:'muazkh'}
-        ],iceCandidatePoolSize:4,iceTransportPolicy:'all'
-    };
+    var SIGS=[{h:'0.peerjs.com',p:'/'},{h:'1.peers.chat',p:'/'}];
+    // ★ ICE: STUN (TURN optional, user can configure via Advanced Settings)
+    // Note: Most free public TURN servers are now dead (2025+).
+    // If behind strict firewall/symmetric NAT, deploy your own Coturn or use Metered free API.
+    function buildICE(){
+        var servers=[
+            {urls:'stun:stun.l.google.com:19302'},
+            {urls:'stun:stun1.l.google.com:19302'},
+            {urls:'stun:stun.nextcloud.com:443'}
+        ];
+        var tu=$('#turnUrl').value.trim(), tn=$('#turnUser').value.trim(), tp=$('#turnPass').value.trim();
+        if(tu&&tn&&tp){
+            servers.push({urls:tu,username:tn,credential:tp});
+            console.log('[v16] TURN configured:',tu);
+        }
+        return {iceServers:servers,iceCandidatePoolSize:4,iceTransportPolicy:'all'};
+    }
     var PROBE_MS=2000;
 
     function show(v){Object.values(V).forEach(function(x){x.classList.remove('on')});v.classList.add('on');if(v===V.ch){setTimeout(function(){ms.scrollTop=ms.scrollHeight;ci.focus()},100)}}
@@ -248,8 +276,8 @@
     function snd(){if(!S.snd)return;try{var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.setValueAtTime(800,c.currentTime);o.frequency.setValueAtTime(1000,c.currentTime+.08);g.gain.setValueAtTime(.15,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.2);o.start(c.currentTime);o.stop(c.currentTime+.2)}catch(e){}}
     function now(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
     function emoji(){return String.fromCodePoint(0x1F465+Math.floor(Math.random()*30))}
-    function uB(){if(S.ct){sb.textContent=t('st_connected');sb.className='badge bk'}else if(pr&&!S.ct){sb.textContent=t('st_waiting');sb.className='badge bw'}else{sb.textContent=t('st_ready');sb.className='badge bi'}}
-    function uCH(){$('#pNm').textContent=S.pn||t('ch_peer');$('#pAv').textContent=emoji();$('#pSt').innerHTML=S.ct?'<span class="sdot"></span>'+t('t_connected')+S.rn:t('t_connecting')}
+    function uB(){if(S.ct){sb.textContent=t('st_connected');sb.className='badge bk'}else if(rlyActive){sb.textContent='Relay';sb.className='badge bk'}else if(pr&&!S.ct){sb.textContent=t('st_waiting');sb.className='badge bw'}else{sb.textContent=t('st_ready');sb.className='badge bi'}}
+    function uCH(){$('#pNm').textContent=S.pn||t('ch_peer');$('#pAv').textContent=emoji();var st=S.ct?('<span class="sdot"></span>'+t('t_connected')+S.rn):(rlyActive?'<span class="sdot"></span>Relay · '+S.rn:t('t_connecting'));$('#pSt').innerHTML=st}
 
     function addMsg(txt,tp,nk){var r=document.createElement('div');r.className='mr '+(tp==='s'?'slf':'oth');if(tp!=='s'){var s=document.createElement('span');s.className='mn';s.textContent=nk||'Peer';r.appendChild(s)}var b=document.createElement('div');b.className='mb';b.textContent=txt;r.appendChild(b);var t=document.createElement('span');t.className='mm';t.textContent=now();r.appendChild(t);var e=ms.querySelector('.es');if(e)e.remove();var ti=ms.querySelector('.ti');if(ti)ti.remove();ms.appendChild(r);ms.scrollTop=ms.scrollHeight}
     function sysMsg(t){var d=document.createElement('div');d.className='msys';d.textContent=t;ms.appendChild(d);ms.scrollTop=ms.scrollHeight}
@@ -260,11 +288,54 @@
     function fCp(t){var ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);return Promise.resolve()}
     function pid(rn){var h=0;for(var i=0;i<rn.length;i++)h=((h<<5)-h+rn.charCodeAt(i))&0xffffffff;return 'anon-'+rn.toLowerCase().replace(/[^a-z0-9]/g,'-')+'-'+(h>>>0).toString(36)}
 
-    function uWS(){if(!timer)return;var e=Math.floor((Date.now()-t0)/1000),sec=e%60,min=Math.floor(e/60);var tp=e<5?t('t_sig_conn'):e<15?t('t_sig_ok'):e<30?t('t_sig_wait'):t('t_sig_long');var ac=nTry>0?t('t_probed')+nTry+'x':'';$('#wtS').textContent=(min?min+'m':'')+sec+'s '+tp+ac}
+    function uWS(){if(!timer)return;var e=Math.floor((Date.now()-t0)/1000),sec=e%60,min=Math.floor(e/60);var tp=e<5?t('t_sig_conn'):e<15?t('t_sig_ok'):e<30?t('t_sig_wait'):t('t_sig_long');var ac=nTry>0?t('t_probed')+nTry+'x':'';var rl=rlyActive?' ⚡Relay fallback active':(rly?' ⚡Relay ready':(nTry>=12?' ⚡Initiating relay...':''));$('#wtS').textContent=(min?min+'m':'')+sec+'s '+tp+ac+rl}
     function loadPJ(){return new Promise(function(r,j){if(typeof Peer!=='undefined'){r(Peer);return}var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';s.onload=function(){console.log('[PJ] loaded');r(Peer)};s.onerror=function(){j(Error('PeerJS load failed'))};document.head.appendChild(s)})}
     function clPc(){pending.forEach(function(c){try{c.close()}catch(e){}});pending=[]}
     function stopR(){clearTimeout(rTimer);rTimer=null}
-    function cleanup(){stopR();clearInterval(timer);timer=null;nTry=0;clPc();try{if(dc)dc.close()}catch(e){}try{if(pr&&pr.destroy)pr.destroy()}catch(e){}dc=null;pr=null;S.ct=false}
+    function cleanup(){stopR();clearInterval(timer);timer=null;nTry=0;clPc();try{if(dc)dc.close()}catch(e){}try{if(pr&&pr.destroy)pr.destroy()}catch(e){}dc=null;pr=null;S.ct=false;if(rly){try{rly.close()}catch(e){}rly=null}rlyActive=false;rlyNick=''}
+
+    function connectRelay(){
+        if(rly||rlyActive||S.ct)return;
+        var proto=location.protocol==='https:'?'wss:':'ws:';
+        var url=proto+'//'+location.host;
+        console.log('[v16] ⇋relay connecting:',url);
+        var ws=new WebSocket(url);
+        ws.onopen=function(){
+            console.log('[v16] ⇋relay open');
+            ws.send(JSON.stringify({t:'j',r:S.rn,n:S.nn}));
+        };
+        ws.onmessage=function(ev){
+            var data;
+            try{data=JSON.parse(ev.data)}catch(e){return}
+            if(!data)return;
+            if(data.t==='j'){
+                // Peer joined relay room
+                rlyActive=true;rlyNick=data.n||'';S.pn=rlyNick;
+                console.log('[v16] ⇋relay peer joined:',rlyNick);
+                if(!S.ct){
+                    stopR();clearInterval(timer);timer=null;
+                    var n=Math.random().toString(36).substr(2,10)+Date.now().toString(36);S._myN=n;
+                    var m=S._myN||'',ps=[m,n].sort(),vc=sHash(ps[0]+ps[1]).substring(0,6).toUpperCase();
+                    S._vc=vc;$('#fpD').textContent=vc;
+                    sysMsg(t('t_verify')+vc);
+                    sysMsg(rlyNick+t('t_joined'));
+                    uB();uCH();bs.disabled=false;show(V.ch);
+                    toast(t('t_p2p_ok')+' (Relay)',3000);
+                }
+            }else if(data.t==='m'){
+                addMsg(data.x,'o',data.n||rlyNick||'Peer');snd();
+            }else if(data.t==='l'){
+                rlyActive=false;rlyNick='';
+                if(!S.ct){sysMsg(t('t_left'));bs.disabled=true;uB()}
+            }
+        };
+        ws.onclose=function(){
+            console.log('[v16] ⇋relay closed');
+            if(rly===ws){rly=null;rlyActive=false}
+        };
+        ws.onerror=function(e){console.log('[v16] ⇋relay err',e)};
+        rly=ws;
+    }
 
     window._enter=function(){
         S.nn=$('#ni').value.trim();S.rn=$('#ri').value.trim().toLowerCase();
@@ -278,8 +349,8 @@
     };
 
     function connect(){
-        bid=pid(S.rn);var a=bid+'-b',b=bid+'-b';
-        console.log('[v16] base:',bid);
+        bid=pid(S.rn);var a=bid+'-a',b=bid+'-b';
+        console.log('[v16] base:',bid,' a=',a,' b=',b);
         $('#fpD').textContent=bid.replace(/-/g,'').substr(0,8).toUpperCase();
         $('#fpBox').style.display='block';
         reg(a,b,0);
@@ -293,7 +364,7 @@
         console.log('[v16] reg#'+att,' '+myId,'@'+sv.h);
         $('#wtS').textContent='Signal '+sv.h+' ('+att+')';
 
-        var p=new Peer(myId,{debug:0,config:ICE,host:sv.h,port:443,path:sv.p,secure:true,pingInterval:3000});
+        var p=new Peer(myId,{debug:0,config:buildICE(),host:sv.h,port:443,path:sv.p,secure:true,pingInterval:3000});
         var done=false;
         var timeout=setTimeout(function(){if(done||S.ct)return;done=true;console.log('[v16] sigTO',sv.h);try{p.destroy()}catch(e){}reg(myId,oId,idx+1)},8000);
 
@@ -328,18 +399,22 @@
             if(S.ct||!pr||pr.destroyed)return;
             nTry++;console.log('[v16] →probe#'+nTry,tid);uWS();
             try{var c=pr.connect(tid,{reliable:true,serialization:'json'});pending.push(c);outConn(c)}catch(e){}
+            // Fallback: after 12 probes (~24s without P2P), start relay
+            if(nTry===12&&!S.ct&&!rlyActive)connectRelay();
             rTimer=setTimeout(probe,PROBE_MS);
         }
         probe();
     }
 
-    function inConn(cn){var hd=false;cn.on('open',function(){if(hd||S.ct)return;hd=true;onOpen(cn)});cn.on('error',function(){});cn.on('close',onClose);if(!hd&&cn.open&&!S.ct){hd=true;onOpen(cn)}}
-    function outConn(cn){var hd=false;cn.on('open',function(){if(hd||S.ct)return;hd=true;stopR();clPc();onOpen(cn)});cn.on('error',function(){})}
+    function inConn(cn){var hd=false;cn.on('open',function(){if(hd||S.ct)return;hd=true;onOpen(cn)});cn.on('error',function(){if(!S.ct&&!rly)connectRelay()});cn.on('close',onClose);if(!hd&&cn.open&&!S.ct){hd=true;onOpen(cn)}}
+    function outConn(cn){var hd=false;cn.on('open',function(){if(hd||S.ct)return;hd=true;stopR();clPc();onOpen(cn)});cn.on('error',function(){if(!S.ct&&!rly)connectRelay()});cn.on('close',function(){if(!S.ct&&hd&&!rly)connectRelay()})}
 
     function onOpen(cn){
         if(S.ct)return;stopR();
         if(dc&&dc!==cn){try{dc.close()}catch(e){}}
         dc=cn;S.ct=true;clearInterval(timer);timer=null;nTry=0;
+        // P2P established — close relay fallback
+        if(rly){try{rly.close()}catch(e){}rly=null;rlyActive=false}
         console.log('[v16] ✅✅CONNECTED!',cn.peer);
         $('#wtT').textContent=t('t_peer_found');$('#wtS').textContent=t('t_p2p_channel');
         var n=Math.random().toString(36).substr(2,10)+Date.now().toString(36);S._myN=n;
@@ -348,7 +423,7 @@
         setTimeout(function(){if(!V.ch.classList.contains('on')){uB();uCH();bs.disabled=false;show(V.ch);toast(t('t_p2p_ok'))}},400);
     }
 
-    function onClose(){if(S.ct){S.ct=false;dc=null;uB();bs.disabled=true;if(V.ch.classList.contains('on'))sysMsg(t('t_left'))}}
+    function onClose(){if(S.ct){S.ct=false;dc=null;rlyActive=false;uB();bs.disabled=true;if(!rly||rly.readyState!==WebSocket.OPEN){if(V.ch.classList.contains('on'))sysMsg('⚡ P2P lost, switching to relay...');connectRelay()}else{if(V.ch.classList.contains('on'))sysMsg(t('t_left'))}}}
     function send(c,d){try{if(c.open)c.send(d)}catch(e){}}
 
     function onData(data){
@@ -363,7 +438,7 @@
         }else if(data.type==='typing'){typing(data.typing)}
     }
 
-    function sHash(str){var h1=0,h2=0;for(var i=0;i<str.length;i++){var c=str.charCodeAt(i);h1=((h1<<5)-h1+c)&0xffffffff;h2=((h2<<7)-h2+c)&0xffffffff}while(((h1>>>0).toString(16)+(h2>>>0).toString(16)).length<8)return '0';return ((h1>>>0).toString(16)+(h2>>>0).toString(16)).toLowerCase()}
+    function sHash(str){var h1=0,h2=0;for(var i=0;i<str.length;i++){var c=str.charCodeAt(i);h1=((h1<<5)-h1+c)&0xffffffff;h2=((h2<<7)-h2+c)&0xffffffff}var p=function(v){return('00000000'+(v>>>0).toString(16)).slice(-8)};return(p(h1)+p(h2)).toLowerCase()}
     function leave(){cleanup();ms.innerHTML='';show(V.w);uB()}
 
     // Events — simplified: button always clickable, validation inside _enter()
@@ -401,18 +476,28 @@
     $('#wrBox').addEventListener('click',function(){cpTx(S.rn).then(function(){toast(t('t_copied')+S.rn)}).catch(function(){toast(t('t_copy_fail'))})});
     $('#btLeave').addEventListener('click',function(){if(confirm(t('t_leave_confirm')))leave()});
 
-    function doSend(){var t=ci.value.trim();if(!t||!S.ct||!dc)return;send(dc,{type:'message',text:t});addMsg(t,'s',S.nn);snd();ci.value='';ci.style.height='auto'}
+    function doSend(){
+        var t=ci.value.trim();if(!t)return;
+        // Route: P2P data channel > relay WebSocket
+        if(S.ct&&dc){
+            send(dc,{type:'message',text:t});
+        }else if(rlyActive&&rly&&rly.readyState===WebSocket.OPEN){
+            rly.send(JSON.stringify({t:'m',r:S.rn,x:t}));
+        }else{return}
+        addMsg(t,'s',S.nn);snd();ci.value='';ci.style.height='auto'
+    }
     bs.addEventListener('click',doSend);ci.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend()}});
     ci.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'});
     var tTt=null;
     ci.addEventListener('input',function(){if(!S.ct||!dc)return;send(dc,{type:'typing',typing:true});clearTimeout(tTt);tTt=setTimeout(function(){if(dc)send(dc,{type:'typing',typing:false})},2000)});
     $('#btSound').addEventListener('click',function(){S.snd=!S.snd;this.innerHTML=S.snd?'&#128276;':'&#128277;';toast(S.snd?t('t_sound_on'):t('t_sound_off'))});
+    $('#btAdv').addEventListener('click',function(){var p=$('#advPanel');var is=p.style.display==='block';p.style.display=is?'none':'block';this.textContent=is?t('w_adv_btn'):(S.lang==='zh'?'⚙ 收起':'⚙ Collapse')});
 
     function chkURL(){var h=window.location.hash;if(!h||!h.startsWith('#room='))return;h=h.substring(1);var params={};h.split('&').forEach(function(p){var kv=p.split('=');if(kv.length===2)params[kv[0]]=decodeURIComponent(kv[1])});if(!params.room)return;ni.value=params.nick||'';ri.value=params.room;if(params.nick&&!S.nn)S.nn=params.nick;if(params.room){toast(t('t_link_detect'));setTimeout(function(){window._enter()},800)}}
     chkURL();window.addEventListener('hashchange',chkURL);
     window.addEventListener('beforeunload',function(e){if(S.ct){e.preventDefault();e.returnValue='Chatting'}});
 
-    console.log('AnonP2P v16 | Multi-sig+TURN | i18n EN/ZH');
+    console.log('AnonP2P v16 | Multi-sig+STUN | Configurable TURN | i18n EN/ZH');
     $('#verF').textContent=t('f_ver');
 
     (function pre(){if(typeof Peer!=='undefined'){sb.textContent=t('st_ready');sb.className='badge bi';return}sb.textContent=t('st_loading');sb.className='badge bw';var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';s.onload=function(){sb.textContent=t('st_ready');sb.className='badge bi'};s.onerror=function(){setTimeout(pre,3000)};document.head.appendChild(s)})();

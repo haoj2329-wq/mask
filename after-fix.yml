@@ -1,0 +1,22 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]: 🔒 匿名P2P聊天
+    - generic [ref=e5]: 就绪
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - img [ref=e10]
+      - heading "匿名 P2P 聊天" [level=1] [ref=e12]
+      - paragraph [ref=e13]: 输入相同房间名，即可与对方建立加密连接
+    - generic [ref=e14]:
+      - text: 通过
+      - strong [ref=e15]: PeerJS (WebRTC)
+      - text: 端到端加密直连。基于 Cloudflare 信令，国内网络友好。
+    - generic [ref=e16]:
+      - generic [ref=e17]: 你的昵称
+      - textbox "给自己起个名字" [ref=e18]
+    - generic [ref=e19]:
+      - generic [ref=e20]: 房间名
+      - textbox "双方输入同一个名称" [ref=e21]
+    - button "进入房间" [disabled] [ref=e22]
+    - generic [ref=e23]: 或
+    - generic [ref=e24]: 点击好友分享的链接可自动加入房间
