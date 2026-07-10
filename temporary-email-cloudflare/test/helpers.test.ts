@@ -3,7 +3,7 @@ import { extractVerificationCode, htmlToPlainText, normalizeLocalPart, truncateU
 
 describe("mail helpers", () => {
   it("normalizes an address to its local part", () => {
-    expect(normalizeLocalPart("ABC234@91mail.org")).toBe("abc234");
+    expect(normalizeLocalPart("ABC234@temp.91mail.org")).toBe("abc234");
     expect(normalizeLocalPart("bad+alias")).toBeNull();
   });
 

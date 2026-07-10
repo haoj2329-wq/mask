@@ -1,6 +1,6 @@
 # 91Mail 公共临时邮箱
 
-面向 `91mail.org` 的免费公共临时邮箱，仅收信、不发信、不支持附件、没有读取鉴权。知道完整邮箱地址的人都可以读取邮件。
+面向 `temp.91mail.org` 的免费公共临时邮箱，仅收信、不发信、不支持附件、没有读取鉴权。知道完整邮箱地址的人都可以读取邮件。网页部署在 `inbox.91mail.org`，不会改动主域现有邮件服务。
 
 ## 功能与限制
 
@@ -29,7 +29,7 @@
 3. 授权 Cloudflare 只访问这个仓库并选择它。
 4. 项目名称填写 `91mail-public-inbox`，部署命令填写 `npm run deploy`。
 5. Cloudflare 会按照 `wrangler.jsonc` 创建 Worker、D1、KV 和 Cron，并执行 D1 migration。
-6. 部署成功后打开 **Email → Email Routing**，为 `91mail.org` 启用 Email Routing。
+6. 部署成功后打开 **Email → Email Routing**，为 `91mail.org` 添加收件子域 `temp.91mail.org`。
 7. 在 **Routing Rules → Catch-all** 中选择 **Send to a Worker**，目标选择 `91mail-public-inbox`。
 8. 向网页生成的地址发送测试邮件。
 
@@ -82,7 +82,7 @@ GET  /api/messages/:messageId
 
 ## 上线检查
 
-- `91mail.org` 已使用 Cloudflare DNS，Email Routing 状态为 Enabled。
+- `91mail.org` 已使用 Cloudflare DNS，`temp.91mail.org` 的 Email Routing 状态为 Enabled。
 - Catch-all 已指向 `91mail-public-inbox`。
 - Worker 的 D1、KV、Assets 和 Cron bindings 均存在。
 - 新建邮箱、收件、验证码提取、延期和到期清理均已测试。

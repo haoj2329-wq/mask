@@ -38,7 +38,7 @@ echo.
 echo 部署完成。
 echo 下一步：Cloudflare Email Routing ^> Catch-all ^> Send to a Worker
 echo Worker 请选择：91mail-public-inbox
-echo 收件域名：91mail.org
+echo 收件域名：temp.91mail.org
 echo.
 pause
 exit /b 0

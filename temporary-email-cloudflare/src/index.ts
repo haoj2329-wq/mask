@@ -1,4 +1,3 @@
-import PostalMime from "postal-mime";
 import {
   boundedInteger,
   extractVerificationCode,
@@ -228,6 +227,9 @@ async function receiveEmail(message: ForwardableEmailMessage, env: Env): Promise
   const maximumBytes = boundedInteger(env.MAX_MESSAGE_BYTES, 2_097_152, 65_536, 10_485_760);
   if (mailbox.message_count >= maximumMessages || message.rawSize > maximumBytes) return;
 
+  // Load the relatively heavy MIME parser only for email events. Keeping it out
+  // of HTTP startup makes the public inbox API independent from MIME setup.
+  const { default: PostalMime } = await import("postal-mime");
   const parsed = await PostalMime.parse(message.raw);
   const maximumBodyBytes = boundedInteger(env.MAX_BODY_BYTES, 524_288, 16_384, 1_048_576);
   const sourceBody = parsed.text || (parsed.html ? htmlToPlainText(parsed.html) : "");

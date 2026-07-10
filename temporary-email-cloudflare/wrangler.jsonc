@@ -4,6 +4,12 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-07-10",
   "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    {
+      "pattern": "inbox.91mail.org",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
@@ -13,19 +19,21 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "91mail-public-inbox-db"
+      "database_name": "91mail-public-inbox-db",
+      "database_id": "58456851-c2d3-47bd-b3f5-8a80c394a2d2"
     }
   ],
   "kv_namespaces": [
     {
-      "binding": "RATE_LIMIT"
+      "binding": "RATE_LIMIT",
+      "id": "e8a7f175cf3249bfa445868202740568"
     }
   ],
   "triggers": {
     "crons": ["*/5 * * * *"]
   },
   "vars": {
-    "MAIL_DOMAIN": "91mail.org",
+    "MAIL_DOMAIN": "temp.91mail.org",
     "MAILBOX_NAME_LENGTH": "12",
     "MAILBOX_TTL_MINUTES": "10",
     "MAILBOX_MAX_TTL_MINUTES": "30",
