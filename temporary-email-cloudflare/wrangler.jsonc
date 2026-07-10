@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "91mail-public-inbox",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "91mail-public-inbox-db"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "RATE_LIMIT"
+    }
+  ],
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  "vars": {
+    "MAIL_DOMAIN": "91mail.org",
+    "MAILBOX_NAME_LENGTH": "12",
+    "MAILBOX_TTL_MINUTES": "10",
+    "MAILBOX_MAX_TTL_MINUTES": "30",
+    "MAILBOX_MAX_EXTENSIONS": "2",
+    "MAX_MESSAGES_PER_MAILBOX": "10",
+    "MAX_MESSAGE_BYTES": "2097152",
+    "MAX_BODY_BYTES": "524288",
+    "CREATE_LIMIT_PER_MINUTE": "5",
+    "CREATE_LIMIT_PER_HOUR": "10",
+    "CREATE_LIMIT_PER_DAY": "50",
+    "READ_LIMIT_PER_MINUTE": "20",
+    "POLL_INTERVAL_SECONDS": "5"
+  }
+}

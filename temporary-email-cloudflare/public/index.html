@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <meta name="description" content="91Mail 免费公共临时邮箱，仅用于接收非敏感邮件。" />
+    <title>91Mail · 公共临时邮箱</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-blue" aria-hidden="true"></div>
+    <div class="ambient ambient-green" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="91Mail 首页">
+        <span class="brand-mark">91</span>
+        <span>Mail</span>
+      </a>
+      <div class="system-status"><span class="status-dot"></span>仅收信服务</div>
+    </header>
+
+    <main class="shell">
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">PUBLIC TEMPORARY INBOX</p>
+        <h1 id="page-title">一个用完即走的<br />公共收件箱。</h1>
+        <p class="intro-copy">无需注册，自动生成地址，邮件到达后即时查看。邮箱默认保留 10 分钟。</p>
+      </section>
+
+      <section class="inbox-card" aria-live="polite">
+        <div class="card-head">
+          <div>
+            <p class="section-label">当前邮箱</p>
+            <div class="address-line">
+              <code id="address" class="address">正在生成…</code>
+              <button id="copy-address" class="icon-button" type="button" disabled>复制</button>
+            </div>
+          </div>
+          <div class="timer-block">
+            <span class="timer-label">剩余时间</span>
+            <strong id="countdown" class="timer">--:--</strong>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="new-mailbox" class="button button-primary" type="button">生成新邮箱</button>
+          <button id="extend-mailbox" class="button button-secondary" type="button" disabled>延长 10 分钟</button>
+          <span id="sync-status" class="sync-status"><span class="sync-dot"></span>等待收信</span>
+        </div>
+
+        <div class="lookup-row">
+          <label for="lookup">查看已有公共邮箱</label>
+          <div class="lookup-control">
+            <input id="lookup" type="text" inputmode="email" autocomplete="off" placeholder="输入完整地址或邮箱前缀" />
+            <button id="lookup-button" class="button button-ghost" type="button">打开</button>
+          </div>
+        </div>
+
+        <div class="message-panel">
+          <div class="message-head">
+            <div>
+              <h2>收件箱</h2>
+              <span id="message-count" class="count-pill">0 封邮件</span>
+            </div>
+            <button id="refresh" class="text-button" type="button" disabled>立即刷新</button>
+          </div>
+
+          <div id="notice" class="notice" hidden></div>
+          <div id="empty-state" class="empty-state">
+            <div class="empty-glyph" aria-hidden="true">↘</div>
+            <h3>正在等待第一封邮件</h3>
+            <p>将上方地址用于接收邮件，页面每 5 秒自动刷新。</p>
+          </div>
+          <div id="message-list" class="message-list" hidden></div>
+        </div>
+      </section>
+
+      <aside class="public-warning">
+        <span class="warning-icon">!</span>
+        <div>
+          <strong>这是完全公开的邮箱</strong>
+          <p>任何知道或猜到地址的人都能读取邮件。请勿用于支付、密码重置、医疗、工作账户或其他敏感用途。附件不会被保存。</p>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <span>91Mail · 免费公共临时邮箱</span>
+      <span>不注册 · 不发信 · 不保存附件</span>
+    </footer>
+
+    <dialog id="message-dialog" class="message-dialog">
+      <div class="dialog-shell">
+        <div class="dialog-head">
+          <div>
+            <span class="section-label">邮件详情</span>
+            <h2 id="dialog-subject">邮件主题</h2>
+          </div>
+          <button id="close-dialog" class="icon-button" type="button" aria-label="关闭邮件">关闭</button>
+        </div>
+        <dl class="mail-meta">
+          <div><dt>发件人</dt><dd id="dialog-sender"></dd></div>
+          <div><dt>收到时间</dt><dd id="dialog-time"></dd></div>
+        </dl>
+        <div id="code-card" class="code-card" hidden>
+          <span>识别到的验证码</span>
+          <div><code id="dialog-code"></code><button id="copy-code" type="button">复制</button></div>
+        </div>
+        <pre id="dialog-body" class="mail-body"></pre>
+      </div>
+    </dialog>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
